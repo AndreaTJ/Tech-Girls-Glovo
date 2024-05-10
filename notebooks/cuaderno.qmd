@@ -21,6 +21,11 @@ airbnb_data <- read.csv("air-bnb-listings.csv", sep = ';')
 head(airbnb_data)
 
 ```
+```{r}
+# Resumen estadístico y estructura del DataFrame
+summary(airbnb_data)
+```
+
 
 ```{r}
 dimension_original <- dim(airbnb_data)
@@ -32,6 +37,8 @@ paste('El numero de columnas que tiene el dataframe airbnb_data es:', dimension_
 ```{r}
 colnames(airbnb_data)
 ```
+
+Para saber con que tipo de datos estoy trabajando: 
 
 ```{r}
 
@@ -250,14 +257,18 @@ table(airbnb_data$Location_Match)
 
 paste("Si concatenamos Country,City y Neighbourhood nos da el mismo resultado que la columna Location, por lo que podemos eliminarla")
 
+
+
+
+```
+
+```{r}
 #Eliminar Location por redundante
 airbnb_data <- select(airbnb_data, -Location)
 
 #Eliminar columnas temporales Combined y Location_Match
 airbnb_data <- select(airbnb_data, -Combined)
 airbnb_data <- select(airbnb_data, -Location_Match)
-
-
 ```
 
 
@@ -277,7 +288,7 @@ resultados
 # Añadir una columna temporal para verificar la condición
 airbnb_data <- airbnb_data %>%
   mutate(
-    check = is.na(Date.last.review) & Number.of.reviews == 0 &  is.na(Number.of.reviews.per.month)
+    check = Number.of.reviews == 0 &is.na(Date.last.review) &  is.na(Number.of.reviews.per.month)
   )
 
 # Sumarización para comprobar la condición extendida
@@ -291,15 +302,17 @@ result <- airbnb_data %>%
 
 print(result)
 
-# Borrar columna temporal check
 
-airbnb_data <- select(airbnb_data, -check)
 
 ```
 
 
+```{r}
+# Borrar columna temporal check
 
-Podemos concluir que siempre que `Date.last.review` es nulo,`Number.of.reviews`
+airbnb_data <- select(airbnb_data, -check)
+```
+
 
 
 ```{r}
@@ -338,7 +351,25 @@ ggplot(airbnb_data, aes(y = Number.of.reviews.per.month)) +
        x = "") +
   theme_minimal()
 
+# Boxplot para Rooms.rent.by.the.host
+ggplot(airbnb_data, aes(y = Rooms.rent.by.the.host)) +
+  geom_boxplot(fill = "lightyellow", color = "goldenrod") +
+  labs(title = "Distribución del Número de Habitaciones alquiladas por el host",
+       y = "Habitaciones alquiladas por el host",
+       x = "") +
+  theme_minimal()
+
 ```
+
+
+```{r}
+# Obtener un resumen de las columnas numéricas
+summary(airbnb_data[sapply(airbnb_data, is.numeric)])
+```
+
+
+
+
 ```{r}
 library(ggplot2)
 
@@ -374,6 +405,112 @@ ggplot(airbnb_data, aes(y = Neighbourhood)) +
 
 
 
+```
+```{r}
+# Cargar el paquete ggplot2
+library(ggplot2)
+
+# Crear un gráfico de densidad
+ggplot(airbnb_data, aes(x = Room.Price)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Distribución de Precios", x = "Precio", y = "Densidad")
+
+
+
+
+```
+```{r}
+
+#Room.price
+
+
+# Transformación Logaritmica
+
+airbnb_data <- mutate(airbnb_data,
+                      Room_Price_Log = log(Room.Price + 1))
+
+# Cargar el paquete ggplot2
+library(ggplot2)
+
+# Crear un gráfico de densidad
+ggplot(airbnb_data, aes(x = Room_Price_Log)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Distribución de Precios", x = "Precio", y = "Densidad")
+```
+
+
+```{r}
+#Minimum.nights
+
+
+# Transformación Logaritmica
+
+airbnb_data <- mutate(airbnb_data,
+                      Minimum_nights_Log = log(Minimum.nights + 1))
+
+# Cargar el paquete ggplot2
+library(ggplot2)
+
+# Crear un gráfico de densidad
+ggplot(airbnb_data, aes(x = Minimum_nights_Log)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Distribución de Minimum Nights", x = "Minimum Nights", y = "Densidad")
+```
+
+
+```{r}
+#Number.of.reviews
+
+
+# Transformación Logaritmica
+
+airbnb_data <- mutate(airbnb_data,
+                      Number_of_reviews_Log = log(Number.of.reviews + 1))
+
+# Cargar el paquete ggplot2
+library(ggplot2)
+
+# Crear un gráfico de densidad
+ggplot(airbnb_data, aes(x = Number_of_reviews_Log)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Distribución de Number of reviews", x = "Number of reviews", y = "Densidad")
+```
+```{r}
+
+#Number.of.reviews.per.month
+
+
+# Transformación Logaritmica
+
+airbnb_data <- mutate(airbnb_data,
+                      Number_of_reviews_per_month_Log = log(Number.of.reviews.per.month + 1))
+
+# Cargar el paquete ggplot2
+library(ggplot2)
+
+# Crear un gráfico de densidad
+ggplot(airbnb_data, aes(x = Number_of_reviews_per_month_Log)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Distribución de Reviews per Month", x = "Reviews per Month", y = "Densidad")
+```
+
+```{r}
+
+#Rooms.rent.by.the.host
+
+
+# Transformación Logaritmica
+
+airbnb_data <- mutate(airbnb_data,
+                      Rooms_rent_by_the_host_Log = log(Rooms.rent.by.the.host + 1))
+
+# Cargar el paquete ggplot2
+library(ggplot2)
+
+# Crear un gráfico de densidad
+ggplot(airbnb_data, aes(x = Rooms_rent_by_the_host_Log)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Distribución de Rooms rent by the host", x = " Rooms rent by the host", y = "Densidad")
 ```
 
 
