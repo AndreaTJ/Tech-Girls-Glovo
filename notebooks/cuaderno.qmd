@@ -4,9 +4,11 @@ format: html
 editor: visual
 ---
 
-Vamos a utilizar el dataset de semillas que se encuentra aquí: https://archive.ics.uci.edu/ml/datasets/seeds#
+# Análisis Exploratorio de Dataset de Airbnb (Madrid-España)
 
-Primero vamos a descargarnos el dataset con el siguiente comando:
+Vamos a trabajar con el dataset air-bnb-listings.csv, que contiene información sobre alojamientos disponibles en la plataforma Airbnb, concretamente de Madrid(España).
+
+En primer lugar, leemos el dataset, se especifica que el separador de campos es un punto y coma.
 
 ```{r}
 library(tidyverse)
@@ -16,16 +18,22 @@ airbnb_data <- read.csv("../data/raw/air-bnb-listings.csv", sep = ';')
 
 ```
 
+Mostramos las primeras filas del dataset. Esto nos permite comprobar que los datos se han cargado correctamente.
+
 ```{r}
 # Ver las primeras filas de los datos
 head(airbnb_data)
 
 ```
 
+Creamos un resumen estadístico del DataFrame, que incluye varias métricas para cada columna.
+
 ```{r}
 # Resumen estadístico y estructura del DataFrame
 summary(airbnb_data)
 ```
+
+Calculamos y mostramos las dimensiones originales del dataset, obteniendo el número de filas y columnas.
 
 ```{r}
 dimension_original <- dim(airbnb_data)
@@ -34,11 +42,13 @@ paste('El numero de filas que tiene el dataframe airbnb_data es:', dimension_ori
 paste('El numero de columnas que tiene el dataframe airbnb_data es:', dimension_original[2])
 ```
 
+Mostramos los nombres de las columnas.
+
 ```{r}
 colnames(airbnb_data)
 ```
 
-Para saber con que tipo de datos estoy trabajando:
+Creamos un DataFrame que muestre la informacion sobre la clase y el tipo de datos de cada columna.
 
 ```{r}
 
@@ -61,12 +71,23 @@ print(clase_tipo)
 
 ```
 
+## Conversión de variables
+
+Convertimos las columnas con fechas (Data.last.review y Update.Date) a tipo Date(Fecha).
+
 ```{r}
+
 # Convertir la columna Date.last.review a tipo fecha
 airbnb_data$Date.last.review <- as.Date(airbnb_data$Date.last.review, format = "%Y-%m-%d")
 
 # Convertir la columna Updated.Date a tipo fecha
 airbnb_data$Updated.Date <- as.Date(airbnb_data$Updated.Date, format = "%Y-%m-%d")
+
+```
+
+Convertimos algunas columnas del conjunto de datos en variables categóricos (factores) ya que está transformación nos va a permitir tratar las variables  `Room.type, Neighbourhood, City y Country`, como categorías discretas en vez de datos continuos. Facilitando así el análisis y la visualización.
+
+```{r}
 
 # Convertir columnas seleccionadas a factores (categóricas)
 airbnb_data$Room.type <- as.factor(airbnb_data$Room.type)
@@ -75,6 +96,8 @@ airbnb_data$City <- as.factor(airbnb_data$City)
 airbnb_data$Country <- as.factor(airbnb_data$Country)
 ```
 
+Nos aseguramos que los cambios se han hecho bien:
+
 ```{r}
 # Crear un vector con los nombres de las columnas
 column_names <- colnames(airbnb_data)
@@ -94,17 +117,9 @@ print(clase_tipo)
 
 ```
 
-```{r}
-# Resumen estadístico y estructura del DataFrame
-summary(airbnb_data)
-```
+### Availibility
 
-```{r}
-# Resumen estadístico y estructura del DataFrame
-str(airbnb_data)
-```
-
-Voy a convertir Availibility en una variable catégorica. Availibility no tiene valores nulos.
+La columna Availibility la convertimos en una variable categórica con rangos específicos para poder categorizar los niveles de disponibilidad en rangos predefinidos y así facilitar el análisis y la visualización. Revisamos también la columna añadida para comprobar que la categorización era adecuada.
 
 ```{r}
 
@@ -122,63 +137,11 @@ airbnb_data$Availability_Cat<- as.factor(airbnb_data$Availability_Cat)
 summary(airbnb_data$Availability_Cat)
 
 
-nueva_dimension<-dim(airbnb_data)
-
-paste("El dataset original tenía:", dimension_original[2], "variables. Tras agregar una nueva variable (Availability_Cat) para categorizar Availibility tenemos:",nueva_dimension[2], "variables")
-
-
 ```
 
-```{r}
-# Función para determinar el tipo de dato de cada columna
-column_type <- function(x) {
-  if (is.factor(x)) {
-    "Categórica"
-  } else if (is.numeric(x)) {
-    "Numérica"
-  } else if (inherits(x, "Date")) {
-    "Fecha"
-  } else {
-    class(x)[1]  # Devuelve la primera clase si es un tipo compuesto o simplemente la clase si no es de los tipos anteriores
-  }
-}
+### City
 
-# Aplicar la función a cada columna y crear un dataframe de resultados
-resultados <- data.frame(
-  Type = sapply(airbnb_data, column_type)   # Tipo determinado por la función
-)
-
-# Mostrar los resultados
-print(resultados)
-
-
-
-```
-
-```{r}
-# Aplicar la función a cada columna para obtener los tipos
-types <- sapply(airbnb_data, column_type)
-
-# Crear un dataframe de resumen con los recuentos de cada tipo
-type_counts <- table(types)
-
-# Convertir la tabla en un dataframe para una mejor visualización
-type_summary <- as.data.frame(type_counts)
-
-# Renombrar las columnas del dataframe
-names(type_summary) <- c("Type", "Count")
-
-# Mostrar el resumen
-print(type_summary)
-
-```
-
-```{r}
-# Obtener un resumen de las columnas numéricas
-summary(airbnb_data[sapply(airbnb_data, is.numeric)])
-```
-
-Quitar todas las filas, cuya ciudad no sea Madrid
+Hicimos un filtrado en el que solo mantuvimos las filas donde el valor de la columna City era Madrid.
 
 ```{r}
 library(dplyr)
@@ -202,6 +165,10 @@ paste("El dataset original tenía:", dimension_original[1], "observaciones. Tras
 
 
 ```
+
+### Coordinates
+
+La columna Coordinates la dividimos en dos columnas, Latitude y Longitude para poder representar las coordenadas geográficas.
 
 ```{r}
 # Asegurándonos de que la columna Coordinates está en formato de string
@@ -231,7 +198,9 @@ print(column_info)
 
 ```
 
-¿Puedo borrar Location?
+### Location
+
+Parece que la columna `Location` es la combinación de `Country, City, y Neighbourhood`. Vamos a probarlo:
 
 ```{r}
 
@@ -252,18 +221,6 @@ table(airbnb_data$Location_Match)
 
 paste("Si concatenamos Country,City y Neighbourhood nos da el mismo resultado que la columna Location, por lo que podemos eliminarla")
 
-
-
-
-```
-
-```{r}
-#Eliminar Location por redundante
-airbnb_data <- select(airbnb_data, -Location)
-
-#Eliminar columnas temporales Combined y Location_Match
-airbnb_data <- select(airbnb_data, -Combined)
-airbnb_data <- select(airbnb_data, -Location_Match)
 ```
 
 Se comparó la columna Location con la combinación de Country, City, y Neighbourhood, y se concluyó que era redundante por lo que se procedió a su eliminación.
@@ -289,11 +246,6 @@ ggplot(airbnb_data, aes(x = time_since_last_review)) +
     subtitle = "Visualización de la frecuencia de días transcurridos",
     x = "Días desde la última reseña", y = "Frecuencia"
   )
-
-```
-
-```{r}
-airbnb_data <- select(airbnb_data, -Time_category)
 
 ```
 
@@ -414,7 +366,6 @@ summary(airbnb_data$Review_category)
 #El intervalo 1-5/mes, incluye los valores desde 1,01 a 5 (incluido) y asi sucesivamente 
 ```
 
-
 Haremos lo mismo con `Number.of.reviews`
 
 ```{r}
@@ -449,29 +400,6 @@ summary(airbnb_data$Review_Count_Category)
 #El intervalo '11-50 reseñas', incluye los valores desde 11 a 50 (incluido) y asi sucesivamente 
 
 
-```
-```{r}
-
-if (!require(writexl)) {
-    install.packages("writexl")
-}
-library(writexl)
-# Exportar el dataframe
-write_xlsx(airbnb_data, "Review_Count_Category.xlsx")
-
-
-
-```
-
-```{r}
-
-getwd()
-
-```
-```{r}
-# Borrar columna temporal check
-
-airbnb_data <- select(airbnb_data, -check)
 ```
 
 Por otro lado los ceros de **`Availibility`**, se han tratado en la columna **`Availibility_cat`** como alojamientos "No disponibles"
@@ -591,99 +519,6 @@ ggplot(airbnb_data, aes(x = Minimum.nights)) +
 
 ```
 
-```{r}
-
-#Room.price
-
-
-# Transformación Logaritmica
-
-airbnb_data <- mutate(airbnb_data,
-                      Room_Price_Log = log(Room.Price + 1))
-
-# Cargar el paquete ggplot2
-library(ggplot2)
-
-# Crear un gráfico de densidad
-ggplot(airbnb_data, aes(x = Room_Price_Log)) +
-  geom_density(fill = "blue", alpha = 0.5) +
-  labs(title = "Distribución de Precios", x = "Precio", y = "Densidad")
-```
-
-```{r}
-#Minimum.nights
-
-
-# Transformación Logaritmica
-
-airbnb_data <- mutate(airbnb_data,
-                      Minimum_nights_Log = log(Minimum.nights + 1))
-
-# Cargar el paquete ggplot2
-library(ggplot2)
-
-# Crear un gráfico de densidad
-ggplot(airbnb_data, aes(x = Minimum_nights_Log)) +
-  geom_density(fill = "blue", alpha = 0.5) +
-  labs(title = "Distribución de Minimum Nights", x = "Minimum Nights", y = "Densidad")
-```
-
-```{r}
-#Number.of.reviews
-
-
-# Transformación Logaritmica
-
-airbnb_data <- mutate(airbnb_data,
-                      Number_of_reviews_Log = log(Number.of.reviews + 1))
-
-# Cargar el paquete ggplot2
-library(ggplot2)
-
-# Crear un gráfico de densidad
-ggplot(airbnb_data, aes(x = Number_of_reviews_Log)) +
-  geom_density(fill = "blue", alpha = 0.5) +
-  labs(title = "Distribución de Number of reviews", x = "Number of reviews", y = "Densidad")
-```
-
-```{r}
-
-#Number.of.reviews.per.month
-
-
-# Transformación Logaritmica
-
-airbnb_data <- mutate(airbnb_data,
-                      Number_of_reviews_per_month_Log = log(Number.of.reviews.per.month + 1))
-
-# Cargar el paquete ggplot2
-library(ggplot2)
-
-# Crear un gráfico de densidad
-ggplot(airbnb_data, aes(x = Number_of_reviews_per_month_Log)) +
-  geom_density(fill = "blue", alpha = 0.5) +
-  labs(title = "Distribución de Reviews per Month", x = "Reviews per Month", y = "Densidad")
-```
-
-```{r}
-
-#Rooms.rent.by.the.host
-
-
-# Transformación Logaritmica
-
-airbnb_data <- mutate(airbnb_data,
-                      Rooms_rent_by_the_host_Log = log(Rooms.rent.by.the.host + 1))
-
-# Cargar el paquete ggplot2
-library(ggplot2)
-
-# Crear un gráfico de densidad
-ggplot(airbnb_data, aes(x = Rooms_rent_by_the_host_Log)) +
-  geom_density(fill = "blue", alpha = 0.5) +
-  labs(title = "Distribución de Rooms rent by the host", x = " Rooms rent by the host", y = "Densidad")
-```
-
 ### Gráficos
 
 ```{r}
@@ -702,6 +537,99 @@ library(ggmap)
 library(dplyr)
 
 ```
+
+#### **Histograma del vecindario en términos de distritos**
+
+```{r}
+
+library(ggplot2)
+
+ggplot(airbnb_data, aes(x = Neighbourhood)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  labs(title = "Histograma del Vecindario en Términos de Distritos", 
+       x = "Distrito", 
+       y = "Frecuencia") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+Primero se establece el dataframe airbnb_data como el conjunto de datos para el gráfico y mapea la variable Neighbourhood en el eje x del gráfico. Después se añade un gráfico de barras al gráfico base. Elegí  el color de relleno de las barras como "skyblue" y el color de borde como "black".
+
+labs(title = "Histograma del Vecindario en Términos de Distritos", x = "Distrito", y = "Frecuencia"): Esta función establece el título del gráfico como "Histograma del Vecindario en Términos de Distritos" y etiqueta los ejes x e y como "Distrito" y "Frecuencia", respectivamente.
+
+\
+**Distribución de precio vs número de reseñas**\
+
+Configura el dataframe airbnb_data para el gráfico y mapea el precio de la habitación en el eje x y el número de reseñas en el eje y.Agregamos puntos al gráfico base para mostrar la distribución de los datos. Y establece el título del gráfico como "Distribución de Precio vs Número de Reseñas".
+
+\
+
+```{r}
+ggplot(airbnb_data, aes(x = Room.Price, y = Number.of.reviews)) +
+
+geom_point(color = "blue") +
+
+labs(title = "Distribución de Precio vs Número de Reseñas", x = "Precio de la Habitación (€)", y = "Número de Reseñas")
+
+
+```
+
+\
+**Precio promedio vs tipo de habitación**\
+
+```{r}
+ggplot(airbnb_data, aes(x = Room.type, y = Room.Price)) +
+
+geom_bar(stat = "summary", fun = "mean", fill = "lightgreen", color = "darkgreen") +
+
+labs(title = "Precio Promedio vs Tipo de Habitación", x = "Tipo de Habitación", y = "Precio Promedio (€)")
+
+
+```
+
+\
+Configura el dataframe airbnb_data para el gráfico y mapea el tipo de habitación en el eje x y el precio de la habitación en el eje y. Luego agrega un gráfico de barras al gráfico base. Calcula la media del precio de la habitación para cada tipo de habitación y usa "skyblue" como color de relleno. Ystablece el título del gráfico como "Precio Promedio vs Tipo de Habitación" y etiqueta los ejes x e y como "Tipo de Habitación" y "Precio Promedio", respectivamente.
+
+\
+
+#### Tipo de propiedad y áreas (distritos) 
+
+```{r}
+# Crear un gráfico de barras apiladas 
+
+ggplot(data = airbnb_data, aes(x = Neighbourhood, fill = `Room.type`)) + geom_bar() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(x = "Distrito", y = "Cantidad") + ggtitle("Distribución de tipos de propiedad por distritos en Madrid")
+```
+
+El gráfico muestra la distribución de los diferentes tipos de propiedades en cada distrito de Madrid. Cada barra representa un distrito y los segmentos de cada barra están coloreados para representar los diferentes tipos de propiedad. Los segmentos de cada barra se apilan unos sobre otros.
+
+#### Distribución de precios vs distrito 
+
+```{r}
+ggplot(data = airbnb_data, aes(x = Neighbourhood, y = Room.Price)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(x = "Distrito", y = "Precio") + ggtitle("Distribución de precios por distrito en Madrid")
+```
+
+\
+Este gráfico representa la distribución de los precios para cada distrito. Cada caja muestra la distribución de los precios en un distrito específico, donde la línea en el centro de la caja representa la mediana de los precios. Los puntos individuales fuera de los bigotes representan valores atípicos potenciales.
+
+#### Tendencia mediana y puntuación de reseñas 
+
+```{r}
+ggplot(data = airbnb_data, aes(x = Room.Price, y = Number.of.reviews)) + geom_point() + geom_smooth(method = "lm", se = FALSE, color = "red") + labs(x = "Precio", y = "Puntuación  de reseñas") + ggtitle("Tendencia de la mediana de precios por puntuación de reseñas por distrito en Madrid")
+```
+
+\
+Este gráfico muestra la relación entre el precio y el puntuación de las reseñas recibidas. Cada punto en el gráfico representa un listado individual, donde la posición horizontal del punto indica el precio y la posición vertical indica el número de reseñas.
+
+El gráfico incluye una línea de tendencia (en rojo) ajustada mediante un modelo de regresión lineal. Esta línea de tendencia representa la tendencia general entre el precio y el número de reseñas: si la línea de tendencia tiene una pendiente positiva, indica una relación positiva entre el precio y el número de reseñas, mientras que una pendiente negativa indica una relación negativa.
+
+\
+\
+
+#### 
+
+#### 
+
+\
 
 #### Gráfico de Distribución en Madrid
 
