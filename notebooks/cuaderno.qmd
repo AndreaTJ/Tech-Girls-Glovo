@@ -12,7 +12,7 @@ Primero vamos a descargarnos el dataset con el siguiente comando:
 library(tidyverse)
 
 # Leer el archivo CSV
-airbnb_data <- read.csv("air-bnb-listings.csv", sep = ';')
+airbnb_data <- read.csv("../data/raw/air-bnb-listings.csv", sep = ';')
 
 ```
 
@@ -21,11 +21,11 @@ airbnb_data <- read.csv("air-bnb-listings.csv", sep = ';')
 head(airbnb_data)
 
 ```
+
 ```{r}
 # Resumen estadístico y estructura del DataFrame
 summary(airbnb_data)
 ```
-
 
 ```{r}
 dimension_original <- dim(airbnb_data)
@@ -38,7 +38,7 @@ paste('El numero de columnas que tiene el dataframe airbnb_data es:', dimension_
 colnames(airbnb_data)
 ```
 
-Para saber con que tipo de datos estoy trabajando: 
+Para saber con que tipo de datos estoy trabajando:
 
 ```{r}
 
@@ -60,7 +60,6 @@ print(clase_tipo)
 
 
 ```
-
 
 ```{r}
 # Convertir la columna Date.last.review a tipo fecha
@@ -95,11 +94,6 @@ print(clase_tipo)
 
 ```
 
-
-
-
-
-
 ```{r}
 # Resumen estadístico y estructura del DataFrame
 summary(airbnb_data)
@@ -110,10 +104,7 @@ summary(airbnb_data)
 str(airbnb_data)
 ```
 
-
-
-Voy a convertir Availibility en una variable catégorica. 
-Availibility no tiene valores nulos. 
+Voy a convertir Availibility en una variable catégorica. Availibility no tiene valores nulos.
 
 ```{r}
 
@@ -125,8 +116,11 @@ labels <- c("No disponible", "Menos de 30 días", "31 a 60 días", "61 a 90 día
 # Categorizar 'Availability' usando cut()
 airbnb_data$Availability_Cat <- cut(airbnb_data$Availibility, breaks = breaks, labels = labels, include.lowest = TRUE)
 
-# Verificar la creación de la nueva columna
-table(airbnb_data$Availability_Cat)
+
+airbnb_data$Availability_Cat<- as.factor(airbnb_data$Availability_Cat)
+
+summary(airbnb_data$Availability_Cat)
+
 
 nueva_dimension<-dim(airbnb_data)
 
@@ -134,6 +128,7 @@ paste("El dataset original tenía:", dimension_original[2], "variables. Tras agr
 
 
 ```
+
 ```{r}
 # Función para determinar el tipo de dato de cada columna
 column_type <- function(x) {
@@ -159,6 +154,7 @@ print(resultados)
 
 
 ```
+
 ```{r}
 # Aplicar la función a cada columna para obtener los tipos
 types <- sapply(airbnb_data, column_type)
@@ -177,14 +173,12 @@ print(type_summary)
 
 ```
 
-
 ```{r}
 # Obtener un resumen de las columnas numéricas
 summary(airbnb_data[sapply(airbnb_data, is.numeric)])
 ```
 
-Quitar todas las filas, cuya ciudad no sea Madrid 
-
+Quitar todas las filas, cuya ciudad no sea Madrid
 
 ```{r}
 library(dplyr)
@@ -208,6 +202,7 @@ paste("El dataset original tenía:", dimension_original[1], "observaciones. Tras
 
 
 ```
+
 ```{r}
 # Asegurándonos de que la columna Coordinates está en formato de string
 airbnb_data$Coordinates <- as.character(airbnb_data$Coordinates)
@@ -271,6 +266,72 @@ airbnb_data <- select(airbnb_data, -Combined)
 airbnb_data <- select(airbnb_data, -Location_Match)
 ```
 
+Se comparó la columna Location con la combinación de Country, City, y Neighbourhood, y se concluyó que era redundante por lo que se procedió a su eliminación.
+
+```{r}
+
+# Calcular el número de días desde la última revisión hasta la fecha de extracción
+date_scraped <- as.Date("2020-07-17")
+airbnb_data$time_since_last_review <- as.numeric(difftime(date_scraped, airbnb_data$Date.last.review, units = "days"))
+
+# Histograma del tiempo transcurrido desde la última reseña
+ggplot(airbnb_data, aes(x = time_since_last_review)) +
+  geom_histogram(bins = 30, fill = "#69b3a2", color = "#e9ecef") + # Colores personalizados para las barras
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Helvetica", size = 12), # Cambia la fuente y el tamaño del texto
+    plot.title = element_text(face = "bold", hjust = 0.5), # Negrita y centrado para el título
+    plot.subtitle = element_text(face = "italic", hjust = 0.5), # Subtítulo en cursiva y centrado
+    axis.title = element_text(face = "bold", size = 13) # Títulos de los ejes en negrita y tamaño aumentado
+  ) +
+  labs(
+    title = "Distribución de días desde la última reseña",
+    subtitle = "Visualización de la frecuencia de días transcurridos",
+    x = "Días desde la última reseña", y = "Frecuencia"
+  )
+
+```
+
+```{r}
+airbnb_data <- select(airbnb_data, -Time_category)
+
+```
+
+```{r}
+library(dplyr)
+
+airbnb_data <- airbnb_data %>%
+  mutate(
+    Time_category = factor(
+      if_else(
+        is.na(time_since_last_review),
+        'sin reseñas',  # Asignar directamente 'sin reseñas' si el valor es NA
+        cut(  # Usar cut solo en valores no-NA
+          time_since_last_review,
+          breaks = c(0, 14, 60, 182, 365, Inf),  # Definiendo los rangos
+          labels = c('0-2 semanas', '2-8 semanas', '2-6 meses', '6-12 meses', '1+ año'),
+          include.lowest = TRUE,
+          right = TRUE
+        )
+      ),
+      levels = c('sin reseñas', '0-2 semanas', '2-8 semanas', '2-6 meses', '6-12 meses', '1+ año')
+    )
+  )
+
+
+
+summary(airbnb_data$Time_category)
+
+#NOTA: 
+#El intervalo sin reseñas, incluye todos los nulos
+#El intervalo 0-2 semanas, incluye los valores desde 0 a 14 (incluido)
+#El intervalo 2-8 semanas, incluye los valores desde 15 a 60 (incluido)  y asi sucesivamente 
+
+```
+
+## Estudio de los valores nulos y ceros.
+
+Creamos un dataframe con los resultados de la contabilizacion por columnas, de nulos y ceros.
 
 ```{r}
 # Dataframe con la contabilizacion de Nulos y Ceros
@@ -281,24 +342,26 @@ resultados <- data.frame(
 
 resultados
 ```
+
+Vemos que existe la misma cantidad de ceros en `Number.of.reviews`, que nulos en `Date.last.review` y `Number.of.reviews.per.month.`
+
+¿Están relacionados estos tres valores?
+
 ```{r}
 
-#Ahora, vamos a crear una columna temporal que indique si Date.last.review y & Number.of.reviews.per.month son nulos ysi Number.of.reviews es cero . Luego, comprobaremos si esta relación siempre se mantiene.
-
 # Añadir una columna temporal para verificar la condición
-airbnb_data <- airbnb_data %>%
+airbnb_data <- airbnb_data |>
   mutate(
-    check = Number.of.reviews == 0 &is.na(Date.last.review) &  is.na(Number.of.reviews.per.month)
+    check = Number.of.reviews == 0 & is.na(Date.last.review) & is.na(Number.of.reviews.per.month)
   )
 
-# Sumarización para comprobar la condición extendida
+# Sumar para comprobar la condición basada en Number.of.reviews
 result <- airbnb_data %>%
-  filter(is.na(Date.last.review)) %>%
+  filter(Number.of.reviews == 0) %>%
   summarise(
-    Total_NA_Dates = n(),
+    Total_Zero_Reviews = n(),
     Correct_Cases = sum(check)
   )
-
 
 print(result)
 
@@ -306,14 +369,112 @@ print(result)
 
 ```
 
+Hemos añadido una columna llamada 'check' a nuestro conjunto de datos. Esta columna nos ayuda a ver si el número de reseñas es cero y, al mismo tiempo, si las fechas de la última reseña y el promedio de reseñas por mes están vacíos. Si se cumplen estas condiciones, la columna indica 'verdadero'; si no, muestra 'falso'.
 
+Comparamos la cuenta de los registros donde el número de reseñas es cero, con el número de cuántos de registros que no solo están sin reseñas, sino que también carecen de fecha de última reseña y de promedio de reseñas por mes. Este paso nos permite comprobar si nuestra teoría sobre la relación entre estas variables se sostiene. Tiene sentido, ya que si un alojamiento no ha recibido reseñas, no podría tener una fecha de última reseña ni un promedio de reseñas mensuales.
+
+Una vez probados esto, para poder hacer un mejor tratamiento de datos, vamos a colocar en los valores nulos de `Number.of.reviews.per.month.`ceros.
+
+```{r}
+# Sustituir directamente los NA por 0 en la columna específica
+airbnb_data$Number.of.reviews.per.month[is.na(airbnb_data$Number.of.reviews.per.month)] <- 0
+```
+
+Ahora voy a categorizar esta variable para un mejor análisis
+
+```{r}
+library(dplyr)
+
+# Asumiendo que airbnb_data ya está cargado.
+
+airbnb_data <- airbnb_data %>%
+  mutate(
+    Review_category = factor(
+      if_else(
+        is.na(Number.of.reviews.per.month) | Number.of.reviews.per.month == 0,  # Condición para NA o cero
+        'sin reseñas',  # Valor si la condición es verdadera
+        cut(  # Función cut para categorizar los valores no NA y no cero
+          Number.of.reviews.per.month,
+          breaks = c(0, 1, 5, 10, 20, Inf),  # Puntos de corte para las categorías
+          labels = c('0-1/mes', '1-5/mes', '5-10/mes', '10-20/mes', '20+ mes'),  # Etiquetas para cada rango
+          include.lowest = TRUE,
+          right = TRUE
+        )
+      ),
+      levels = c('sin reseñas', '0-1/mes', '1-5/mes', '5-10/mes', '10-20/mes', '20+ mes')  # Definiendo el orden de los niveles del factor
+    )
+  )
+
+
+summary(airbnb_data$Review_category)
+
+#NOTA: 
+#El intervalo sin reseñas, incluye todos los nulos
+#El intervalo 0-1/mes, incluye los valores desde 0.01 a 1 (incluido)
+#El intervalo 1-5/mes, incluye los valores desde 1,01 a 5 (incluido) y asi sucesivamente 
+```
+
+
+Haremos lo mismo con `Number.of.reviews`
+
+```{r}
+library(dplyr)
+
+airbnb_data <- airbnb_data %>%
+  mutate(
+    Review_Count_Category = factor(
+      if_else(
+        Number.of.reviews == 0,  # Condición para verificar si hay 0 reseñas
+        'sin reseñas',  # Etiqueta para 0 reseñas
+        cut(  # Usar cut para valores mayores a 0
+          Number.of.reviews,
+          breaks = c(0, 1, 10, 50, 100, 500, Inf),  # Ajuste de los rangos para incluir 1 correctamente
+          labels = c('1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '101-500 reseñas', '500+ reseñas'),
+          include.lowest = TRUE,
+          right = TRUE  # Cambio a TRUE para incluir el valor 1 en la categoría '1 reseña'
+        )
+      ),
+      levels = c('sin reseñas', '1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '101-500 reseñas', '500+ reseñas')  # Definición explícita del orden de los niveles
+    )
+  )
+
+# Puedes verificar el resultado con:
+summary(airbnb_data$Review_Count_Category)
+
+
+#NOTA: 
+#El intervalo sin reseñas, incluye todos los ceros
+#El intervalo1 reseña, incluye solos los valor 1 
+#El intervalo '2-10 reseñas', incluye los valores desde 2 a 10 (incluido)
+#El intervalo '11-50 reseñas', incluye los valores desde 11 a 50 (incluido) y asi sucesivamente 
+
+
+```
+```{r}
+
+if (!require(writexl)) {
+    install.packages("writexl")
+}
+library(writexl)
+# Exportar el dataframe
+write_xlsx(airbnb_data, "Review_Count_Category.xlsx")
+
+
+
+```
+
+```{r}
+
+getwd()
+
+```
 ```{r}
 # Borrar columna temporal check
 
 airbnb_data <- select(airbnb_data, -check)
 ```
 
-
+Por otro lado los ceros de **`Availibility`**, se han tratado en la columna **`Availibility_cat`** como alojamientos "No disponibles"
 
 ```{r}
 # Cargar la librería necesaria
@@ -361,14 +522,10 @@ ggplot(airbnb_data, aes(y = Rooms.rent.by.the.host)) +
 
 ```
 
-
 ```{r}
 # Obtener un resumen de las columnas numéricas
 summary(airbnb_data[sapply(airbnb_data, is.numeric)])
 ```
-
-
-
 
 ```{r}
 library(ggplot2)
@@ -396,6 +553,16 @@ ggplot(airbnb_data, aes(x = Availability_Cat)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title = "Distribución por Categoría de Disponibilidad", x = "Categoría de Disponibilidad", y = "Frecuencia")
 
+# Gráfico para Time_category
+ggplot(airbnb_data, aes(x = Time_category)) +
+  geom_bar(fill = "yellow") +
+  labs(title = "Distribución de Time_category", x = "Time_category", y = "Frecuencia")
+
+# Gráfico para Time_category
+ggplot(airbnb_data, aes(x = Review_category)) +
+  geom_bar(fill = "green") +
+  labs(title = "Distribución de Review_category", x = "Review_category", y = "Frecuencia")
+
 # Grafico para barrio  
 
 ggplot(airbnb_data, aes(y = Neighbourhood)) +
@@ -406,6 +573,7 @@ ggplot(airbnb_data, aes(y = Neighbourhood)) +
 
 
 ```
+
 ```{r}
 # Cargar el paquete ggplot2
 library(ggplot2)
@@ -416,9 +584,13 @@ ggplot(airbnb_data, aes(x = Room.Price)) +
   labs(title = "Distribución de Precios", x = "Precio", y = "Densidad")
 
 
-
+# Crear un gráfico de densidad
+ggplot(airbnb_data, aes(x = Minimum.nights)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Distribución de Minimum.nights", x = "Minimum.nights", y = "Densidad")
 
 ```
+
 ```{r}
 
 #Room.price
@@ -438,7 +610,6 @@ ggplot(airbnb_data, aes(x = Room_Price_Log)) +
   labs(title = "Distribución de Precios", x = "Precio", y = "Densidad")
 ```
 
-
 ```{r}
 #Minimum.nights
 
@@ -457,7 +628,6 @@ ggplot(airbnb_data, aes(x = Minimum_nights_Log)) +
   labs(title = "Distribución de Minimum Nights", x = "Minimum Nights", y = "Densidad")
 ```
 
-
 ```{r}
 #Number.of.reviews
 
@@ -475,6 +645,7 @@ ggplot(airbnb_data, aes(x = Number_of_reviews_Log)) +
   geom_density(fill = "blue", alpha = 0.5) +
   labs(title = "Distribución de Number of reviews", x = "Number of reviews", y = "Densidad")
 ```
+
 ```{r}
 
 #Number.of.reviews.per.month
@@ -513,6 +684,174 @@ ggplot(airbnb_data, aes(x = Rooms_rent_by_the_host_Log)) +
   labs(title = "Distribución de Rooms rent by the host", x = " Rooms rent by the host", y = "Densidad")
 ```
 
+### Gráficos
+
+```{r}
+# Instalar paquetes si no están instalados
+if (!require("readxl")) install.packages("readxl")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("corrplot")) install.packages("corrplot")
+if (!require("ggmap")) install.packages("ggmap")
+if (!require("dplyr")) install.packages("dplyr")
+
+# Cargar paquetes
+library(readxl)
+library(ggplot2)
+library(corrplot)
+library(ggmap)
+library(dplyr)
+
+```
+
+#### Gráfico de Distribución en Madrid
+
+Las columnas `Latitude` y `Longitude` están disponibles, podemos crear un mapa de puntos en Madrid:
+
+```{r}
+# Instalar y cargar el paquete leaflet si no está ya instalado
+if (!require("leaflet")) install.packages("leaflet")
+library(leaflet)
+
+# Crear un mapa con Leaflet
+madrid_map <- leaflet(data = airbnb_data) |>
+  addTiles()  # Añadir el mapa base
+
+# Añadir marcadores con clústeres y capas por barrio
+for (neighbourhood in unique(airbnb_data$Neighbourhood)) {
+  neighbourhood_data <- airbnb_data[airbnb_data$Neighbourhood == neighbourhood,]
+  madrid_map <- madrid_map |>
+    addCircleMarkers(
+      data = neighbourhood_data,
+      lng = ~Longitude,
+      lat = ~Latitude,
+      radius = ~ifelse(Room.Price > 100, 8, 5), # Diferente tamaño basado en el precio
+      color = ~colorBin(palette = c("yellow", "red", "green"), bins = 5, Room.Price),
+      popup = ~paste("Precio: ", Room.Price, "€", "<br>",
+                     "Noches mínimas: ", Minimum.nights, "<br>",
+                     "Reseñas: ", Number.of.reviews),
+      clusterOptions = markerClusterOptions(),
+      group = neighbourhood
+    )
+}
+
+# Añadir control de capas para seleccionar o deseleccionar barrios
+madrid_map <- madrid_map |>
+  addLayersControl(
+    overlayGroups = unique(airbnb_data$Neighbourhood),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+
+# Establecer la vista inicial del mapa y mostrarlo
+madrid_map <- madrid_map |>
+  setView(lng = -3.703, lat = 40.416, zoom = 12)
+
+# Imprimir el mapa
+madrid_map
+
+
+
+
+
+```
+
+```{r}
+# Instalar y cargar los paquetes necesarios
+if (!require("leaflet")) install.packages("leaflet")
+library(leaflet)
+if (!require("leaflet.extras")) install.packages("leaflet.extras")
+library(leaflet.extras)
+
+
+# Crear un mapa con Leaflet
+madrid_map <- leaflet(data = airbnb_data) |>
+  addTiles()  # Añadir el mapa base
+
+# Añadir la capa de mapa de calor
+madrid_map <- madrid_map |>
+  addHeatmap(
+    lng = ~Longitude, lat = ~Latitude, intensity = ~1,
+    blur = 20, max = 0.05, radius = 15
+  )
+
+# Establecer la vista inicial del mapa y mostrarlo
+madrid_map <- madrid_map |>
+  setView(lng = -3.703, lat = 40.416, zoom = 11)
+
+# Imprimir el mapa
+madrid_map
+
+```
+
+```{r}
+# Cargar el paquete dplyr para manipulación de datos
+if (!require("dplyr")) install.packages("dplyr")
+library(dplyr)
+
+# Definir una función para determinar el color basado en el precio
+get_color <- function(price) {
+  if (price < 50) {
+    "#00FF00"  # Verde para precios bajos
+  } else if (price < 100) {
+    "#FFFF00"  # Amarillo para precios medios
+  } else {
+    "#FF0000"  # Rojo para precios altos
+  }
+}
+
+# Añadir una nueva columna al dataset con los colores calculados
+airbnb_data <- airbnb_data %>%
+  mutate(Color = sapply(Room.Price, get_color))
+
+# Crear el mapa
+library(leaflet)
+
+madrid_map <- leaflet(data = airbnb_data) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addCircleMarkers(
+    ~Longitude, ~Latitude,
+    radius = 5,
+    color = ~Color,
+    fillOpacity = 0.5,
+    stroke = FALSE,  # No dibujar bordes alrededor de los círculos
+    group = "Airbnb Locations"
+  ) %>%
+  setView(lng = -3.703, lat = 40.416, zoom = 11)
+
+# Imprimir el mapa
+madrid_map
+
+
+```
+
+#### Mapa de Calor de Correlación
+
+Para el mapa de calor de correlación, seleccionamos las columnas numéricas relevantes.
+
+```{r}
+
+# Instalar paquetes si no están instalados
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("corrplot")) install.packages("corrplot")
+
+library(dplyr)
+library(corrplot)
+
+# Seleccionando columnas relevantes para la correlación
+cor_data <- airbnb_data |>
+  select(Room.Price, Minimum.nights, Number.of.reviews, Number.of.reviews.per.month, Rooms.rent.by.the.host) |>
+  na.omit()  # Eliminando filas con valores NA para evitar errores
+
+# Calculando la matriz de correlación
+cor_matrix <- cor(cor_data)
+
+# Generando el mapa de calor
+corrplot(cor_matrix, method = "color", type = "upper", order = "hclust",
+         tl.col = "black", tl.srt = 45, addrect = 2, 
+         title = "Mapa de Calor de Correlación para AirBnB en Madrid",
+         mar = c(0, 0, 2, 0))  # Ajusta el margen superior para dar más espacio al título
+
+
+```
 
 ```{r}
 
@@ -524,4 +863,3 @@ library(writexl)
 write_xlsx(airbnb_data, "airbnb_data_madrid_final_9_may.xlsx")
 
 ```
-
