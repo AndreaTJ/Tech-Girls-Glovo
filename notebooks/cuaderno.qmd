@@ -178,7 +178,7 @@ Una vez hecho el filtro, verificamos que en `City`, no aparezca nada que no sea 
 
 ```{r}
 # Verificar que sólo quedan entradas de Madrid en el dataset original
-print(as.data.frame(table(airbnb_data$City)))
+summary(airbnb_data)
 
 ```
 
@@ -244,69 +244,11 @@ airbnb_data <- airbnb_data |> mutate(Location_Match = Location == Combined)
 
 table(airbnb_data$Location_Match) #Cuenta solo lo que es TRUE
 
-
-
+#Eliminar Location
+airbnb_data <- select(airbnb_data, -Location)
 ```
 
 Comparamos la columna `Location` con la combinación de `Country, City, y Neighbourhood`, y pudimos concluir que era redundante por lo que se procedió a su eliminación.
-
-### Date.last.review
-
-```{r}
-
-# Calcular el número de días desde la última revisión hasta la fecha de extracción
-date_scraped <- as.Date("2020-07-17")
-airbnb_data$time_since_last_review <- as.numeric(difftime(date_scraped, airbnb_data$Date.last.review, units = "days"))
-
-# Histograma del tiempo transcurrido desde la última reseña
-ggplot(airbnb_data, aes(x = time_since_last_review)) +
-  geom_histogram(bins = 30, fill = "#69b3a2", color = "#e9ecef") + # Colores personalizados para las barras
-  theme_minimal() +
-  theme(
-    text = element_text(family = "Helvetica", size = 12), # Cambia la fuente y el tamaño del texto
-    plot.title = element_text(face = "bold", hjust = 0.5), # Negrita y centrado para el título
-    plot.subtitle = element_text(face = "italic", hjust = 0.5), # Subtítulo en cursiva y centrado
-    axis.title = element_text(face = "bold", size = 13) # Títulos de los ejes en negrita y tamaño aumentado
-  ) +
-  labs(
-    title = "Distribución de días desde la última reseña",
-    subtitle = "Visualización de la frecuencia de días transcurridos",
-    x = "Días desde la última reseña", y = "Frecuencia"
-  )
-
-```
-
-```{r}
-library(dplyr)
-
-airbnb_data <- airbnb_data %>%
-  mutate(
-    Time_category = factor(
-      if_else(
-        is.na(time_since_last_review),
-        'sin reseñas',  # Asignar directamente 'sin reseñas' si el valor es NA
-        cut(  # Usar cut solo en valores no-NA
-          time_since_last_review,
-          breaks = c(0, 14, 60, 182, 365, Inf),  # Definiendo los rangos
-          labels = c('0-2 semanas', '2-8 semanas', '2-6 meses', '6-12 meses', '1+ año'),
-          include.lowest = TRUE,
-          right = TRUE
-        )
-      ),
-      levels = c('sin reseñas', '0-2 semanas', '2-8 semanas', '2-6 meses', '6-12 meses', '1+ año')
-    )
-  )
-
-
-
-summary(airbnb_data$Time_category)
-
-#NOTA: 
-#El intervalo sin reseñas, incluye todos los nulos
-#El intervalo 0-2 semanas, incluye los valores desde 0 a 14 (incluido)
-#El intervalo 2-8 semanas, incluye los valores desde 15 a 60 (incluido)  y asi sucesivamente 
-
-```
 
 ## Estudio de los valores nulos y ceros.
 
@@ -361,39 +303,7 @@ Una vez probados esto, para poder hacer un mejor tratamiento de datos, vamos a c
 airbnb_data$Number.of.reviews.per.month[is.na(airbnb_data$Number.of.reviews.per.month)] <- 0
 ```
 
-Ahora voy a categorizar `Number.of.reviews.per.month` para un mejor análisis
-
-```{r}
-library(dplyr)
-
-airbnb_data <- airbnb_data |>
-  mutate(
-    Review_category = factor(
-      if_else(
-        is.na(Number.of.reviews.per.month) | Number.of.reviews.per.month == 0,  # Condición para NA o cero
-        'sin reseñas',  # Valor si la condición es verdadera
-        cut(  # Función cut para categorizar los valores no NA y no cero
-          Number.of.reviews.per.month,
-          breaks = c(0, 1, 5, 10, 20, Inf),  # Puntos de corte para las categorías
-          labels = c('0-1/mes', '1-5/mes', '5-10/mes', '10-20/mes', '20+ mes'),  # Etiquetas para cada rango
-          include.lowest = TRUE,
-          right = TRUE
-        )
-      ),
-      levels = c('sin reseñas', '0-1/mes', '1-5/mes', '5-10/mes', '10-20/mes', '20+ mes')  # Definiendo el orden de los niveles del factor
-    )
-  )
-
-
-summary(airbnb_data$Review_category)
-
-#NOTA: 
-#El intervalo sin reseñas, incluye todos los nulos
-#El intervalo 0-1/mes, incluye los valores desde 0.01 a 1 (incluido)
-#El intervalo 1-5/mes, incluye los valores desde 1,01 a 5 (incluido) y asi sucesivamente 
-```
-
-Haremos lo mismo con `Number.of.reviews`
+Ahora voy a categorizar `Number.of.reviews` para un mejor análisis
 
 ```{r}
 library(dplyr)
@@ -429,6 +339,99 @@ summary(airbnb_data$Review_Count_Category)
 
 ```
 
+Haremos lo mismo con `Number.of.reviews.per.month`
+
+```{r}
+library(dplyr)
+
+airbnb_data <- airbnb_data |>
+  mutate(
+    Review_category = factor(
+      if_else(
+        is.na(Number.of.reviews.per.month) | Number.of.reviews.per.month == 0,  # Condición para NA o cero
+        'sin reseñas',  # Valor si la condición es verdadera
+        cut(  # Función cut para categorizar los valores no NA y no cero
+          Number.of.reviews.per.month,
+          breaks = c(0, 1, 5, 10, 20, Inf),  # Puntos de corte para las categorías
+          labels = c('0-1/mes', '1-5/mes', '5-10/mes', '10-20/mes', '20+ mes'),  # Etiquetas para cada rango
+          include.lowest = TRUE,
+          right = TRUE
+        )
+      ),
+      levels = c('sin reseñas', '0-1/mes', '1-5/mes', '5-10/mes', '10-20/mes', '20+ mes')  # Definiendo el orden de los niveles del factor
+    )
+  )
+
+
+summary(airbnb_data$Review_category)
+
+#NOTA: 
+#El intervalo sin reseñas, incluye todos los nulos
+#El intervalo 0-1/mes, incluye los valores desde 0.01 a 1 (incluido)
+#El intervalo 1-5/mes, incluye los valores desde 1,01 a 5 (incluido) y asi sucesivamente 
+```
+
+### Date.last.review
+
+```{r}
+
+# Calcular el número de días desde la última revisión hasta la fecha de extracción
+#Asumimos que la fecha del ultimo scrapping fue
+
+date_scraped <- as.Date("2020-08-07")
+
+airbnb_data$time_since_last_review <- as.numeric(difftime(date_scraped, airbnb_data$Date.last.review, units = "days"))
+
+# Histograma del tiempo transcurrido desde la última reseña
+ggplot(airbnb_data, aes(x = time_since_last_review)) +
+  geom_histogram(bins = 30, fill = "#69b3a2", color = "#e9ecef") + # Colores personalizados para las barras
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Helvetica", size = 12), # Cambia la fuente y el tamaño del texto
+    plot.title = element_text(face = "bold", hjust = 0.5), # Negrita y centrado para el título
+    plot.subtitle = element_text(face = "italic", hjust = 0.5), # Subtítulo en cursiva y centrado
+    axis.title = element_text(face = "bold", size = 13) # Títulos de los ejes en negrita y tamaño aumentado
+  ) +
+  labs(
+    title = "Distribución de días desde la última reseña",
+    subtitle = "Visualización de la frecuencia de días transcurridos",
+    x = "Días desde la última reseña", y = "Frecuencia"
+  )
+
+```
+
+```{r}
+library(dplyr)
+
+airbnb_data <- airbnb_data %>%
+  mutate(
+    Time_category = factor(
+      if_else(
+        is.na(time_since_last_review),
+        'sin reseñas',  # Asignar directamente 'sin reseñas' si el valor es NA
+        cut(  # Usar cut solo en valores no-NA
+          time_since_last_review,
+          breaks = c(0, 60, 182, 365, Inf),  # Definiendo los rangos
+          labels = c('hasta 8 semanas', '8 semanas - 6 meses', '6-12 meses', '1+ año'),
+          include.lowest = TRUE,
+          right = TRUE
+        )
+      ),
+      levels = c('sin reseñas', 'hasta 8 semanas', '8 semanas - 6 meses', '6-12 meses', '1+ año')
+    )
+  )
+
+
+
+summary(airbnb_data$Time_category)
+
+#NOTA: 
+#El intervalo sin reseñas, incluye todos los nulos
+#El intervalo hasta 8 semanas, incluye los valores hasta e 60 (incluida)
+#El intervalo 8 semanas - 6 meses, incluye los valores desde 61 a 182 (incluido)  y asi sucesivamente 
+
+```
+
 Por otro lado los ceros de **`Availibility`**, se han tratado en la columna **`Availibility_cat`** como alojamientos "No disponibles"
 
 ### Resumen cambios en las variables.
@@ -439,7 +442,7 @@ Resumen más condensado de los cambios realizados en cada columna de tu conjunto
 
 -   Convertidas a formato de fecha (`%Y-%m-%d`).
 
--   *Date.last.review* - Se ha hecho una Resta entre Fecha del Scrapping(Updated.Date) y *Date.last.review*. El resultado se guarda en *Time_category* y se categorizada en rangos de tiempo:
+-   Se ha hecho una Resta entre `Fecha del Scrapping(2020-08-07) y Date.last.review.` El resultado se guarda en *`Time_category`* y se categorizada en rangos de tiempo:
 
     -   Las categorías para esta variable son:
         -   "sin reseñas"
@@ -485,16 +488,6 @@ Resumen más condensado de los cambios realizados en cada columna de tu conjunto
 
 -   Análisis de valores nulos y ceros; categorizados en rangos para facilitar análisis.
 
-##### **Review_category** (creado a partir de `Number.of.reviews.per.month`)
-
--   Las categorías son:
-    -   "sin reseñas"
-    -   "0-1/mes"
-    -   "1-5/mes"
-    -   "5-10/mes"
-    -   "10-20/mes"
-    -   "20+ mes"
-
 ##### **Review_Count_Category** (creado a partir de `Number.of.reviews`)
 
 -   Las categorías son:
@@ -505,6 +498,18 @@ Resumen más condensado de los cambios realizados en cada columna de tu conjunto
     -   "51-100 reseñas"
     -   "101-500 reseñas"
     -   "500+ reseñas"
+
+##### **Review_category** (creado a partir de `Number.of.reviews.per.month`)
+
+-   Las categorías son:
+    -   "sin reseñas"
+    -   "0-1/mes"
+    -   "1-5/mes"
+    -   "5-10/mes"
+    -   "10-20/mes"
+    -   "20+ mes"
+
+##### 
 
 ### Gráficos
 
@@ -544,16 +549,6 @@ ggplot(airbnb_data, aes(x = Room.type)) +
   geom_bar(fill = "coral") +
   labs(title = "Distribución por Tipo de Habitación", x = "Tipo de Habitación", y = "Frecuencia")
 
-# Gráfico para City
-ggplot(airbnb_data, aes(x = City)) +
-  geom_bar(fill = "lightgreen") +
-  labs(title = "Distribución por Ciudad", x = "Ciudad", y = "Frecuencia")
-
-# Gráfico para Country
-ggplot(airbnb_data, aes(x = Country)) +
-  geom_bar(fill = "gold") +
-  labs(title = "Distribución por País", x = "País", y = "Frecuencia")
-
 # Gráfico para Availability_Cat
 ggplot(airbnb_data, aes(x = Availability_Cat)) +
   geom_bar(fill = "purple") +
@@ -563,7 +558,7 @@ ggplot(airbnb_data, aes(x = Availability_Cat)) +
 # Gráfico para Time_category
 ggplot(airbnb_data, aes(x = Time_category)) +
   geom_bar(fill = "yellow") +
-  labs(title = "Distribución de Time_category (Resta entre Updated.Date y Date.last.review)", x = "Time_category", y = "Frecuencia")
+  labs(title = "Distribución de Time_category (Resta entre Scrapping date y Date.last.review)", x = "Time_category", y = "Frecuencia")
 
 # Gráfico para Review_category
 ggplot(airbnb_data, aes(x = Review_category)) +
@@ -715,65 +710,9 @@ Este gráfico muestra la relación entre el precio y el puntuación de las rese�
 
 El gráfico incluye una línea de tendencia (en rojo) ajustada mediante un modelo de regresión lineal. Esta línea de tendencia representa la tendencia general entre el precio y el número de reseñas: si la línea de tendencia tiene una pendiente positiva, indica una relación positiva entre el precio y el número de reseñas, mientras que una pendiente negativa indica una relación negativa.
 
-\
-\
-
-#### 
-
-#### 
-
-\
-
 #### Gráfico de Distribución en Madrid
 
 Las columnas `Latitude` y `Longitude` están disponibles, podemos crear un mapa de puntos en Madrid:
-
-```{r}
-# Instalar y cargar el paquete leaflet si no está ya instalado
-if (!require("leaflet")) install.packages("leaflet")
-library(leaflet)
-
-# Crear un mapa con Leaflet
-madrid_map <- leaflet(data = airbnb_data) |>
-  addTiles()  # Añadir el mapa base
-
-# Añadir marcadores con clústeres y capas por barrio
-for (neighbourhood in unique(airbnb_data$Neighbourhood)) {
-  neighbourhood_data <- airbnb_data[airbnb_data$Neighbourhood == neighbourhood,]
-  madrid_map <- madrid_map |>
-    addCircleMarkers(
-      data = neighbourhood_data,
-      lng = ~Longitude,
-      lat = ~Latitude,
-      radius = ~ifelse(Room.Price > 100, 8, 5), # Diferente tamaño basado en el precio
-      color = ~colorBin(palette = c("yellow", "red", "green"), bins = 5, Room.Price),
-      popup = ~paste("Precio: ", Room.Price, "€", "<br>",
-                     "Noches mínimas: ", Minimum.nights, "<br>",
-                     "Reseñas: ", Number.of.reviews),
-      clusterOptions = markerClusterOptions(),
-      group = neighbourhood
-    )
-}
-
-# Añadir control de capas para seleccionar o deseleccionar barrios
-madrid_map <- madrid_map |>
-  addLayersControl(
-    overlayGroups = unique(airbnb_data$Neighbourhood),
-    options = layersControlOptions(collapsed = FALSE)
-  )
-
-# Establecer la vista inicial del mapa y mostrarlo
-madrid_map <- madrid_map |>
-  setView(lng = -3.703, lat = 40.416, zoom = 12)
-
-# Imprimir el mapa
-madrid_map
-
-
-
-
-
-```
 
 ```{r}
 # Instalar y cargar los paquetes necesarios
@@ -872,6 +811,19 @@ corrplot(cor_matrix, method = "color", type = "upper", order = "hclust",
          mar = c(0, 0, 2, 0))  # Ajusta el margen superior para dar más espacio al título
 
 
+```
+
+```{r}
+library("ggplot2")
+library("GGally")
+
+airbnb_data1 <- select(airbnb_data, -Name)
+
+airbnb_data2 <- select(airbnb_data, Room.Price, Minimum.nights, Number.of.reviews, Number.of.reviews.per.month, Rooms.rent.by.the.host)
+
+summary(airbnb_data2)
+
+ggpairs(airbnb_data2)
 ```
 
 ```{r}
