@@ -6,7 +6,7 @@ Este proyecto se basa en una tabla proporcionada por el dataset público de Airb
 
 El objetivo de esta propuesta es mejorar la escalabilidad del proyecto a través de un modelo de entidad-relación (ER) bien estructurado.
 
-## Contenido del Proyecto
+## Contenido:
 
 ### Archivos Incluidos
 
