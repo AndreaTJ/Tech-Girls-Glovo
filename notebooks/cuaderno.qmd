@@ -37,10 +37,10 @@ paste('El numero de columnas que tiene el dataframe airbnb_data es:', dimension_
 
 El dataset original, tiene `17 variables(columnas)` y `21278 observaciones(filas).`
 
-Creamos un resumen estadístico del DataFrame, que incluye varias métricas para cada columna.
+Examinamos que tipo de variables tenemos.
 
 ```{r}
-summary(airbnb_data_raw)
+str(airbnb_data_raw)
 ```
 
 Vemos que tenemos variables categóricas como `Room.type, Neighbourhood, City y Country` que no se están tomando como tal, sino como `character`. Lo mismo sucede con las fechas.
@@ -78,7 +78,7 @@ print(resultado_clase_tipo)
 
 Con esta información, vamos a proceder a hacer las conversiones necesarias:
 
-## Conversión de variables
+## `Conversión de variables`
 
 Para asegurar la integridad del dataframe original mientras realizamos cambios, primero crearemos una copia del mismo. Todas las modificaciones y análisis se realizarán en esta copia, denominada **`airbnb_data`**.
 
@@ -87,7 +87,7 @@ airbnb_data <- data.frame(airbnb_data_raw)
 
 ```
 
-Como hemos visto arriba, hay dos columnas que deberían ser de diferente clase.
+Como hemos visto arriba, hay columnas que deberían ser de diferente clase.
 
 ```{r}
 str(airbnb_data[, c("Date.last.review", "Updated.Date", "Room.type", "Neighbourhood", "City", "Country")])
@@ -298,8 +298,8 @@ airbnb_data <- airbnb_data |>
   )
 
 # Sumar para comprobar la condición basada en Number.of.reviews
-result <- airbnb_data %>%
-  filter(Number.of.reviews == 0) %>%
+result <- airbnb_data |>
+  filter(Number.of.reviews == 0) |>
   summarise(
     Total_Zero_Reviews = n(),
     Correct_Cases = sum(check)
@@ -326,32 +326,77 @@ Vamos a categorizar `Number.of.reviews` y `Number.of.reviews.per.month`para un m
 Empezamos colocando ceros en los valores nulos de `Number.of.reviews.per.month, para`asegurarmos podamos operar sobre esta columna, más adelante.
 
 ```{r}
+sum(is.na(airbnb_data$Number.of.reviews.per.month))
+```
+
+Tenemos `5400 registros vacíos` de `Number.of.reviews.per.month.`
+
+Sustituimos NA por el valor cero.
+
+```{r}
 # Sustituir directamente los NA por 0 en la columna específica
 airbnb_data$Number.of.reviews.per.month[is.na(airbnb_data$Number.of.reviews.per.month)] <- 0
 ```
 
 ```{r}
-sum(is.na(airbnb_data$Number.of.reviews.per.month))
+
+#Calculo el total de filas con NA 
+paste("Total suma de filas NA:", sum(is.na(airbnb_data$Number.of.reviews.per.month)))
+
+#Calculo el total de filas con ceros 
+paste("Total suma de filas con ceros:", sum(airbnb_data$Number.of.reviews.per.month == 0))
+
+
 ```
+
+Como podemos comprobar, el cambio se ha hecho correctamente. Los `5400 registros vacíos` de `Number.of.reviews.per.month` ahora contienen ceros.
+
+\
+Ahora categorizamos la variable:
 
 ```{r}
 library(dplyr)
 
-airbnb_data <- airbnb_data %>%
+airbnb_data <- airbnb_data |> 
+  mutate(
+    Review_category = factor(
+      cut(
+        Number.of.reviews.per.month,
+        breaks = c(-Inf, 0, 1, 5, 10, Inf),  # Incluyendo  la categoría de "sin reseñas" en los breaks
+        labels = c('sin reseñas', '0-1/mes', '1-5/mes', '5-10/mes', '+10/mes'),
+        include.lowest = TRUE,
+        right = TRUE
+      )
+    )
+  )
+
+
+summary(airbnb_data$Review_category)
+
+#NOTA: 
+#El intervalo sin reseñas, incluye todos los nulos
+#El intervalo 0-1/mes, incluye los valores desde 0.01 reviews.per.month a 1 (incluido)
+#El intervalo 1-5/mes, incluye los valores desde 1,01 reviews.per.month a 5 (incluido) y asi sucesivamente 
+```
+
+Si el valor es cero, lo categorizamos como "sin reseñas". Luego, los valores se dividen en los siguientes rangos: 0-1/mes, 1-5/mes, 5-10/mes y +10/mes. Finalmente, creamos una nueva variable llamada **`Review_category`** que contiene estas categorías.
+
+Ahora categorizamos la variable `Number.of.reviews`:
+
+```{r}
+library(dplyr)
+
+airbnb_data <- airbnb_data |> 
   mutate(
     Review_Count_Category = factor(
-      if_else(
-        Number.of.reviews == 0,  # Condición para verificar si hay 0 reseñas
-        'sin reseñas',  # Etiqueta para 0 reseñas
-        cut(  # Usar cut para valores mayores a 0
-          Number.of.reviews,
-          breaks = c(0, 1, 10, 50, 100, 500, Inf),  # Ajuste de los rangos para incluir 1 correctamente
-          labels = c('1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '101-500 reseñas', '500+ reseñas'),
-          include.lowest = TRUE,
-          right = TRUE  # Cambio a TRUE para incluir el valor 1 en la categoría '1 reseña'
-        )
+      cut(
+        Number.of.reviews,
+        breaks = c(-Inf, 0, 1, 10, 50, 100, 500, Inf),  # Incluyendo la condición de 0 reseñas directamente en los breaks
+        labels = c('sin reseñas', '1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '101-500 reseñas', '500+ reseñas'),
+        include.lowest = TRUE,
+        right = TRUE
       ),
-      levels = c('sin reseñas', '1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '101-500 reseñas', '500+ reseñas')  # Definición explícita del orden de los niveles
+      levels = c('sin reseñas', '1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '101-500 reseñas', '500+ reseñas')
     )
   )
 
@@ -368,41 +413,11 @@ summary(airbnb_data$Review_Count_Category)
 
 ```
 
-Haremos lo mismo con `Number.of.reviews.per.month`
+Si hay cero reseñas, se etiqueta como "sin reseñas". De lo contrario, se divide en varios rangos, como 1 reseña, 2-10 reseñas, 11-50 reseñas, etc. Luego, se crea una nueva variable llamada **`Review_Count_Category`** con estas categorías.
 
-Una vez probados esto, para poder hacer un mejor tratamiento de datos, vamos a colocar en los valores nulos de `Number.of.reviews.per.month.`ceros.
+#### `Date.last.review`
 
-```{r}
-library(dplyr)
-
-airbnb_data <- airbnb_data |>
-  mutate(
-    Review_category = factor(
-      if_else(
-        is.na(Number.of.reviews.per.month) | Number.of.reviews.per.month == 0,  # Condición para NA o cero
-        'sin reseñas',  # Valor si la condición es verdadera
-        cut(  # Función cut para categorizar los valores no NA y no cero
-          Number.of.reviews.per.month,
-          breaks = c(0, 1, 5, 10, Inf),  # Puntos de corte para las categorías
-          labels = c('0-1/mes', '1-5/mes', '5-10/mes', '+10/mes'),  # Etiquetas para cada rango
-          include.lowest = TRUE,
-          right = TRUE
-        )
-      ),
-      levels = c('sin reseñas', '0-1/mes', '1-5/mes', '5-10/mes', '+10/mes')  # Definiendo el orden de los niveles del factor
-    )
-  )
-
-
-summary(airbnb_data$Review_category)
-
-#NOTA: 
-#El intervalo sin reseñas, incluye todos los nulos
-#El intervalo 0-1/mes, incluye los valores desde 0.01 reviews.per.month a 1 (incluido)
-#El intervalo 1-5/mes, incluye los valores desde 1,01 reviews.per.month a 5 (incluido) y asi sucesivamente 
-```
-
-### Date.last.review
+Es fundamental considerar la actualidad de la información y su influencia en los análisis y decisiones basadas en estos datos. Vamos a calcular la cantidad de días transcurridos desde el último scraping hasta la fecha de extracción de los datos.
 
 ```{r}
 
@@ -413,6 +428,13 @@ date_scraped <- as.Date("2020-08-07")
 
 airbnb_data$time_since_last_review <- as.numeric(difftime(date_scraped, airbnb_data$Date.last.review, units = "days"))
 
+```
+
+Se calcula el tiempo transcurrido en días desde la fecha de extracción de datos, representada por "2020-08-07", hasta la fecha de la última reseña. La diferencia se almacena en una nueva columna llamada **`time_since_last_review`**
+
+Ahora veamos la distribución de los datos en **`time_since_last_review`**
+
+```{r}
 # Histograma del tiempo transcurrido desde la última reseña
 ggplot(airbnb_data, aes(x = time_since_last_review)) +
   geom_histogram(bins = 30, fill = "#69b3a2", color = "#e9ecef") + # Colores personalizados para las barras
@@ -428,13 +450,14 @@ ggplot(airbnb_data, aes(x = time_since_last_review)) +
     subtitle = "Visualización de la frecuencia de días transcurridos",
     x = "Días desde la última reseña", y = "Frecuencia"
   )
-
 ```
+
+Para poder realizar un mejor análisis de los datos, vamos a categorizar las nueva columna: **`time_since_last_review`**
 
 ```{r}
 library(dplyr)
 
-airbnb_data <- airbnb_data %>%
+airbnb_data <- airbnb_data |>
   mutate(
     Time_category = factor(
       if_else(
@@ -452,8 +475,6 @@ airbnb_data <- airbnb_data %>%
     )
   )
 
-
-
 summary(airbnb_data$Time_category)
 
 #NOTA: 
@@ -463,84 +484,82 @@ summary(airbnb_data$Time_category)
 
 ```
 
-Por otro lado los ceros de **`Availibility`**, se han tratado en la columna **`Availibility_cat`** como alojamientos "No disponibles"
+#### **`Availibility`**
 
-### Resumen cambios en las variables.
+```{r}
+#Calculo el total de filas con ceros 
+paste("Total suma de filas con ceros:", sum(airbnb_data$Availibility == 0))
+```
 
-Resumen más condensado de los cambios realizados en cada columna de tu conjunto de datos:
+Los ceros de **`Availibility`**, se han tratado en la columna **`Availibility_Cat`** como alojamientos "No disponibles"
 
-#### 1. **Date.last.review & Updated.Date**
+```{r}
+summary(airbnb_data$Availability_Cat)
+
+```
+
+Vemos que el recuento de "No disponible" en **`Availibility_Cat`**, coincide con el recuento de ceros en **`Availibility.`**
+
+## `Resumen cambios en las variables.`
+
+Resumen condensado y ajustado de las transformaciones aplicadas:
+
+#### `1. Date.last.review y Updated.Date`
 
 -   Convertidas a formato de fecha (`%Y-%m-%d`).
+-   Calculada la diferencia en días desde la fecha del último scraping (`2020-08-07`) hasta `Date.last.review`. El resultado se almacena en `Time_category` y se categoriza en:
+    -   "sin reseñas" (casos donde la fecha es nula)
+    -   "hasta 8 semanas"
+    -   "8 semanas - 6 meses"
+    -   "6-12 meses"
+    -   "1+ año"
 
--   Se ha hecho una Resta entre `Fecha del Scrapping(2020-08-07) y Date.last.review.` El resultado se guarda en *`Time_category`* y se categorizada en rangos de tiempo:
+#### `2. Room.type, Neighbourhood, City, Country`
 
-    -   Las categorías para esta variable son:
-        -   "sin reseñas"
+-   Transformadas en variables categóricas (factores) para facilitar análisis por segmentos.
 
-        -   "0-2 semanas"
+#### `3. Availability`
 
-        -   "2-8 semanas"
-
-        -   "2-6 meses"
-
-        -   "6-12 meses"
-
-        -   "1+ año"
-
-#### 2. **Room.type, Neighbourhood, City, Country**
-
--   Transformadas en variables categóricas (factores).
-
-#### 3. **Availability**
-
--   Categorizada en rangos desde 'No disponible' hasta '181 a 365 días'. Así:
-
-    -   "No disponible" - Para los alojamientos con cero días disponibles.
+-   Categorizada en la columna `Availibility_Cat`desde 'No disponible' hasta '181 a 365 días' en rangos que representan distintos niveles de disponibilidad:
+    -   "No disponible" (para alojamientos con cero días disponibles)
     -   "Menos de 30 días"
     -   "31 a 60 días"
     -   "61 a 90 días"
     -   "91 a 180 días"
     -   "181 a 365 días"
 
-#### 4. **City**
+#### `4. City`
 
--   Filtrados datos para incluir solo entradas de Madrid.
+-   Filtrados los datos para incluir solo entradas de Madrid.
 
-#### 5. **Coordinates**
+#### `5. Coordinates`
 
--   Separada en dos columnas numéricas: Latitude y Longitude.
+-   Separada en dos columnas numéricas: `Latitude` y `Longitude`.
 
-#### 6. **Location**
+#### `6. Location`
 
--   Comprobada por redundancia y eliminada tras confirmar duplicidad con Country, City, y Neighbourhood.
+-   Eliminada tras confirmar redundancia con `Country`, `City`, y `Neighbourhood`.
 
-#### 7. **Number.of.reviews & Number.of.reviews.per.month**
+#### `7. Number.of.reviews & Number.of.reviews.per.month`
 
--   Análisis de valores nulos y ceros; categorizados en rangos para facilitar análisis.
+-   Análisis de valores nulos y ceros; categorizados para facilitar análisis:
+    -   **Review_Count_Category** (basado en `Number.of.reviews`):
+        -   "sin reseñas"
+        -   "1 reseña"
+        -   "2-10 reseñas"
+        -   "11-50 reseñas"
+        -   "51-100 reseñas"
+        -   "101-500 reseñas"
+        -   "500+ reseñas"
+    -   **Review_category** (basado en `Number.of.reviews.per.month`):
+        -   "sin reseñas" (incluye registros nulos y ceros)
+        -   "0-1/mes"
+        -   "1-5/mes"
+        -   "5-10/mes"
+        -   "10-20/mes"
+        -   "20+ mes"
 
-##### **Review_Count_Category** (creado a partir de `Number.of.reviews`)
-
--   Las categorías son:
-    -   "sin reseñas"
-    -   "1 reseña"
-    -   "2-10 reseñas"
-    -   "11-50 reseñas"
-    -   "51-100 reseñas"
-    -   "101-500 reseñas"
-    -   "500+ reseñas"
-
-##### **Review_category** (creado a partir de `Number.of.reviews.per.month`)
-
--   Las categorías son:
-    -   "sin reseñas"
-    -   "0-1/mes"
-    -   "1-5/mes"
-    -   "5-10/mes"
-    -   "10-20/mes"
-    -   "20+ mes"
-
-##### 
+Este resumen aclara y especifica las transformaciones y categorizaciones realizadas en cada variable, alineándolas con las operaciones y el análisis llevado a cabo en tu código R.
 
 ### Gráficos
 
