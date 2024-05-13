@@ -172,10 +172,19 @@ Una vez hecho el filtro, verificamos que en `City`, no aparezca nada que no sea 
 
 ```{r}
 # Verificar que sólo quedan entradas de Madrid en el dataset original
-summary(airbnb_data[, c("City")])
+summary(airbnb_data[, c("City", "Country")])
 ```
 
-La información de arriba, es lo que esperabamos, solo quedan los registros de Madrid.
+La información de arriba, es lo que esperabamos, solo quedan los registros de Madrid.\
+Sin embargo siguen apareciendo otros niveles tanto en `City y Country`. Ya no los necesitamos, así los vamos a eliminar.
+
+```{r}
+airbnb_data$City <- droplevels(airbnb_data$City)
+airbnb_data$Country <- droplevels(airbnb_data$Country)
+
+#Verificamos que solo queden los niveles deseados en City y Country
+summary(airbnb_data[, c("City", "Country")])
+```
 
 ### `Availibility`
 
@@ -362,8 +371,8 @@ airbnb_data <- airbnb_data |>
     Review_category = factor(
       cut(
         Number.of.reviews.per.month,
-        breaks = c(-Inf, 0, 1, 5, 10, Inf),  # Incluyendo  la categoría de "sin reseñas" en los breaks
-        labels = c('sin reseñas', '0-1/mes', '1-5/mes', '5-10/mes', '+10/mes'),
+        breaks = c(-Inf, 0, 1, 5, Inf),  # Incluyendo  la categoría de "sin reseñas" en los breaks
+        labels = c('sin reseñas', '0-1/mes', '1-5/mes', '+5/mes'),
         include.lowest = TRUE,
         right = TRUE
       )
@@ -561,7 +570,17 @@ Resumen condensado y ajustado de las transformaciones aplicadas:
 
 Este resumen aclara y especifica las transformaciones y categorizaciones realizadas en cada variable, alineándolas con las operaciones y el análisis llevado a cabo en tu código R.
 
-### Gráficos
+```{r}
+if (!require(writexl)) {
+    install.packages("writexl")
+}
+library(writexl)
+# Exportar el dataframe
+write_xlsx(airbnb_data, "dataset_airbnb_procesado1.xlsx")
+
+```
+
+## `Gráficos`
 
 ```{r}
 # Instalar paquetes si no están instalados
@@ -580,30 +599,98 @@ library(dplyr)
 
 ```
 
-#### **Gráficos por variables**
+### **`Gráficos por variables`**
 
-##### Variables Categóricas
+#### `Variables Categóricas`
+
+#### **`1. Neighbourhood`**
 
 ```{r}
 #Histogramas
 
 # Grafico para barrio  
 
-ggplot(airbnb_data, aes(y = Neighbourhood)) +
-  geom_bar() +
-  theme(axis.text.y = element_text(size = 5)) +
-  labs(title = "Distribución por Vecindario", x = "Frecuencia", y = "Barrio")
+library(ggplot2)
+library(dplyr)
 
+# Calcular la frecuencia de cada barrio
+neighbourhood_freq <- airbnb_data |>
+  count(Neighbourhood) |>
+  arrange(desc(n)) |>
+  top_n(10, n)  # Selecciona solo los top 10
+
+# Graficar la distribución por barrio solo para los top 10
+ggplot(neighbourhood_freq, aes(x = n, y = reorder(Neighbourhood, n))) +
+  geom_bar(stat = "identity", fill = "steelblue") +  # Cambia el color de las barras
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 15),  # Aumenta el tamaño del texto del eje y
+        plot.title = element_text(size = 22, face = "bold")) +  # Aumenta y pone en negrita el título
+  labs(title = "Distribución por Barrio", x = "Frecuencia", y = "Barrio")
+
+
+
+
+
+```
+
+El gráfico representa la `frecuencia de listados de Airbnb en los top 10 barrios más populares`. Cada barra representa un barrio diferente, ordenados de mayor a menor frecuencia de arriba hacia abajo.
+
+1.  **Barrios (Eje Y)**: Desde la parte superior, los barrios listados son Embajadores, Universidad, Palacio, Sol, Justicia, Cortes, Trafalgar, Palos de Moguer, Goya, y Puerta del Angel.
+
+2.  **Frecuencia (Eje X)**: La escala del eje X va desde 0 hasta más de 2000, indicando el número de listados en cada barrio.
+
+El barrio de `Embajadores` tiene la mayor cantidad de listados, seguido por `Universidad y Palacio`. Los barrios de `Goya y Puerta del Angel`, al final de la lista, tienen considerablemente menos listados comparados con los más altos en la gráfica.
+
+#### **`2. Room.type`**
+
+```{r}
 # Gráfico para Room.type
 ggplot(airbnb_data, aes(x = Room.type)) +
   geom_bar(fill = "coral") +
   labs(title = "Distribución por Tipo de Habitación", x = "Tipo de Habitación", y = "Frecuencia")
+```
+
+Las barras representan la frecuencia de cada tipo de habitación en el dataset.
+
+-   **Tipos de Habitación (Eje X)**: Las categorías mostradas son "Entire home/apt" (casa o apartamento completo), "Hotel room" (habitación de hotel), "Private room" (habitación privada) y "Shared room" (habitación compartida).
+
+-   **Frecuencia (Eje Y)**: El eje vertical muestra la cantidad de listados, con una escala que va de 0 a más de 10,000.
+
+Observaciones clave del gráfico:
+
+-   **Casa o apartamento completo** tiene la frecuencia más alta, indicando que es el tipo de alojamiento más comúnmente listado.
+
+-   **Habitación privada** es el segundo tipo más común, aunque con una frecuencia significativamente menor en comparación con las casas o apartamentos completos.
+
+-   **Habitación de hotel** y **habitación compartida** tienen las menores frecuencias, con la habitación compartida mostrando la menor popularidad entre los listados.
+
+#### `3. Availability_Cat`
+
+```{r}
 
 # Gráfico para Availability_Cat
 ggplot(airbnb_data, aes(x = Availability_Cat)) +
   geom_bar(fill = "purple") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title = "Distribución por Categoría de Disponibilidad", x = "Categoría de Disponibilidad", y = "Frecuencia")
+```
+
+Las barras representan la cantidad de propiedades disponibles según diferentes rangos de días al año en que están disponibles para ser alquiladas.
+
+-   **Categorías de Disponibilidad (Eje X)**: Se dividen en seis categorías distintas: "No disponible", "Hasta 30 días", "31 a 60 días", "61 a 90 días", "91 a 180 días", y "181 a 365 días".
+
+-   **Frecuencia (Eje Y)**: El eje vertical indica la cantidad de listados, con una escala que va desde 0 hasta más de 8000.
+
+Observaciones clave del gráfico:
+
+-   **No disponible** y **181 a 365 días** son las categorías con la mayor frecuencia, indicando que una gran cantidad de propiedades no están disponibles para alquiler o están disponibles casi todo el año.
+
+-   Las demás categorías presentan una menor frecuencia, con la categoría "31 a 60 días" mostrando la menor cantidad de propiedades. Esto sugiere que menos propiedades están disponibles por períodos intermedios de tiempo.
+
+-   Las propiedades que se alquilan por "91 a 180 días" tienen una frecuencia considerablemente más alta que las de corto plazo pero menor que las de muy largo plazo, reflejando posiblemente una preferencia por alquileres de medio término.
+
+```{r}
+
 
 # Gráfico para Time_category
 ggplot(airbnb_data, aes(x = Time_category)) +
@@ -619,7 +706,6 @@ ggplot(airbnb_data, aes(x = Review_category)) +
 ggplot(airbnb_data, aes(x = Review_Count_Category)) +
   geom_bar(fill = "blue") +
   labs(title = "Distribución de Review_Count_Category (Categorizacion de Number.of.reviews)", x = "Review_Count_Category", y = "Frecuencia")
-
 
 ```
 
@@ -683,24 +769,55 @@ ggplot(airbnb_data, aes(x = Rooms.rent.by.the.host)) +
 ```{r}
 
 library(ggplot2)
+library(dplyr)
 
-ggplot(airbnb_data, aes(x = Neighbourhood)) +
+# Calcular la frecuencia de cada distrito
+distrito_frecuencia <- airbnb_data %>%
+  count(Neighbourhood) %>%
+  arrange(desc(n))  # Ordenar en orden descendente por frecuencia
+
+# Obtener los top 10 distritos más frecuentes
+top10_distritos <- distrito_frecuencia %>%
+  top_n(10, n)
+
+# Reorganizar el factor Neighbourhood en función de su frecuencia
+airbnb_data$Neighbourhood <- factor(airbnb_data$Neighbourhood, levels = distrito_frecuencia$Neighbourhood)
+
+# Filtrar solo las filas que corresponden a los 10 principales distritos
+airbnb_data_top10 <- airbnb_data %>%
+  filter(Neighbourhood %in% top10_distritos$Neighbourhood)
+
+# Trazar el histograma
+ggplot(airbnb_data_top10, aes(x = Neighbourhood)) +
   geom_bar(fill = "skyblue", color = "black") +
-  labs(title = "Histograma del Vecindario en Términos de Distritos", 
+  labs(title = "Histograma Top10 del Vecindario en Términos de Distritos", subtitle="(Top 10, Orden Descendente)", 
        x = "Distrito", 
        y = "Frecuencia") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+
 ```
 
-Primero se establece el dataframe airbnb_data como el conjunto de datos para el gráfico y mapea la variable Neighbourhood en el eje x del gráfico. Después se añade un gráfico de barras al gráfico base. Elegí  el color de relleno de las barras como "skyblue" y el color de borde como "black".
+El gráfico muestra un histograma del vecindario en términos de distritos, centrándose en los diez distritos más frecuentes en los datos de Airbnb. Los distritos están ordenados en orden descendente según su frecuencia. Cada barra representa la frecuencia de un distrito específico, lo que proporciona una visión general de la distribución de la popularidad de los distritos en el conjunto de datos.\
+\
+**Observaciones del Gráfico:**
 
-labs(title = "Histograma del Vecindario en Términos de Distritos", x = "Distrito", y = "Frecuencia"): Esta función establece el título del gráfico como "Histograma del Vecindario en Términos de Distritos" y etiqueta los ejes x e y como "Distrito" y "Frecuencia", respectivamente.
+-   **Embajadores** es el distrito con la mayor frecuencia de listados, seguido de **Universidad** y **Palacio**, indicando que estas áreas son probablemente las más demandadas o con más oferta de alojamientos en Airbnb.
+
+-   A partir de **Sol** en adelante, la frecuencia de los listados comienza a disminuir progresivamente.
+
+-   Los distritos como **Goya** y **Puerta del Angel** muestran las menores frecuencias dentro de este top 10, lo que podría sugerir una menor popularidad o una oferta más limitada de alojamientos en estas áreas comparado con distritos como Embajadores o Universidad.
+
+#### **Presunciones basadas en el gráfico:**
+
+1.  **Relación entre precio y popularidad de los distritos**: Podemos examinar si los distritos más populares, tienen precios más altos en promedio, sugiriendo que la demanda podría estar influyendo en el precio.
+
+2.  **Impacto de las reseñas en la frecuencia de reserva**: Con datos sobre el número de reseñas y la frecuencia de estas (por mes), podemos analizar si las propiedades con más reseñas tienden a estar en distritos más populares, indicando posiblemente una mayor satisfacción o mayor rotación de huéspedes.
+
+3.  **Efectos de la disponibilidad en la elección del distrito**: Con la categoría de disponibilidad, podríamos investigar si los distritos con propiedades más disponibles (o menos) son más o menos populares, lo que puede influir en la estrategia de precios y promoción.
 
 \
 **Distribución de precio vs número de reseñas**\
-
-Configura el dataframe airbnb_data para el gráfico y mapea el precio de la habitación en el eje x y el número de reseñas en el eje y.Agregamos puntos al gráfico base para mostrar la distribución de los datos. Y establece el título del gráfico como "Distribución de Precio vs Número de Reseñas".
 
 ```{r}
 ggplot(airbnb_data, aes(x = Room.Price, y = Number.of.reviews)) +
@@ -712,23 +829,61 @@ labs(title = "Distribución de Precio vs Número de Reseñas", x = "Precio de la
 
 ```
 
+#### **Observaciones del Gráfico:**
+
+-   La mayoría de las propiedades tienen un precio por debajo de los 1,000 euros y reciben menos de 200 reseñas.
+
+-   Hay una gran concentración de puntos cerca del origen, lo que sugiere que muchas propiedades tienen precios bajos y un número moderado o bajo de reseñas.
+
+-   Existen unas pocas propiedades con precios muy altos (más de 2,500 euros) y con variados niveles de reseñas, incluyendo algunas con muy pocas o ninguna reseña.
+
+-   Propiedades con un gran número de reseñas (más de 200) generalmente tienen precios inferiores a 1,000 euros.
+
+#### **Presunciones y Análisis Basados en los Datos del Dataset:**
+
+1.  **Precio vs Popularidad**: Parece haber una relación inversa entre el precio y el número de reseñas, donde las propiedades más económicas tienden a tener más reseñas. Esto podría sugerir que las propiedades más asequibles son más populares o tienen una mayor rotación de huéspedes.
+
+2.  **Propiedades de Alta Gama**: Las propiedades con precios muy altos tienden a tener menos reseñas, lo que podría indicar una menor ocupación o que estas propiedades son alquiladas menos frecuentemente. Esto puede deberse a que son opciones menos asequibles para la mayoría de los viajeros.
+
+3.  **Segmentación del Mercado**: La distribución de precios y reseñas puede ayudar a identificar diferentes segmentos de mercado dentro del dataset de Airbnb, como alojamientos económicos, de rango medio y de lujo.
+
 \
 **Precio promedio vs tipo de habitación**\
 
 ```{r}
+library(ggplot2)
+
 ggplot(airbnb_data, aes(x = Room.type, y = Room.Price)) +
+  geom_bar(stat = "summary", fun = "mean", fill = "lightgreen", color = "darkgreen") +
+  geom_hline(yintercept = mean(airbnb_data$Room.Price), color = "red", linetype = "dashed", linewidth = 1) +
+  labs(title = "Precio Promedio vs Tipo de Habitación", x = "Tipo de Habitación", y = "Precio Promedio (€)")
 
-geom_bar(stat = "summary", fun = "mean", fill = "lightgreen", color = "darkgreen") +
 
-labs(title = "Precio Promedio vs Tipo de Habitación", x = "Tipo de Habitación", y = "Precio Promedio (€)")
+
 
 
 ```
 
 \
-Configura el dataframe airbnb_data para el gráfico y mapea el tipo de habitación en el eje x y el precio de la habitación en el eje y. Luego agrega un gráfico de barras al gráfico base. Calcula la media del precio de la habitación para cada tipo de habitación y usa "skyblue" como color de relleno. Ystablece el título del gráfico como "Precio Promedio vs Tipo de Habitación" y etiqueta los ejes x e y como "Tipo de Habitación" y "Precio Promedio", respectivamente.
+El gráfico muestra el precio promedio de las habitaciones de Airbnb en relación con el tipo de habitación. Cada barra representa el precio promedio de un tipo específico de habitación, mientras que la línea roja punteada indica el precio promedio general de todas las habitaciones en el conjunto de datos. Esto proporciona una comparación visual entre los precios promedio de diferentes tipos de habitaciones, así como una referencia rápida del precio promedio general.
 
-\
+### **Observaciones del Gráfico:**
+
+-   **Casa o Apartamento Completo**: Este tipo de alojamiento tiene el precio promedio más alto, considerablemente más alto que los otros tipos, lo que indica que alquilar una propiedad completa es generalmente más costoso.
+
+-   **Habitación de Hotel**: Tiene un precio promedio significativamente más bajo que un apartamento o casa completa, pero más alto que una habitación privada o compartida.
+
+-   **Habitación Privada**: Presenta un precio promedio más bajo que la habitación de hotel.
+
+-   **Habitación Compartida**: Es la opción más económica, con el precio promedio más bajo entre los tipos de habitaciones mostrados.
+
+### **Presunciones y Análisis Basados en el Gráfico:**
+
+1.  **Preferencia y Precio**: Los precios reflejan posiblemente la preferencia de privacidad y espacio, con opciones más privadas y espaciosas como "Entire home/apt" que tienen un precio más alto.
+
+2.  **Oferta y Demanda**: La diferencia en los precios podría reflejar la oferta y demanda de cada tipo de habitación, donde habitaciones completas y privadas son posiblemente más demandadas para largas estancias o grupos más grandes.
+
+3.  **Presupuesto de Viajeros**: Los precios pueden también indicar el presupuesto típico de los viajeros que eligen diferentes tipos de habitaciones, con viajeros de presupuesto limitado optando más probablemente por habitaciones compartidas o privadas.
 
 #### Tipo de propiedad y áreas (distritos) 
 
