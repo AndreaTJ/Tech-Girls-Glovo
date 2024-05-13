@@ -400,12 +400,12 @@ airbnb_data <- airbnb_data |>
     Review_Count_Category = factor(
       cut(
         Number.of.reviews,
-        breaks = c(-Inf, 0, 1, 10, 50, 100, 500, Inf),  # Incluyendo la condición de 0 reseñas directamente en los breaks
-        labels = c('sin reseñas', '1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '101-500 reseñas', '500+ reseñas'),
+        breaks = c(-Inf, 0, 1, 10, 50, 100, Inf),  # Incluyendo la condición de 0 reseñas directamente en los breaks
+        labels = c('sin reseñas', '1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '+ 101 reseñas'),
         include.lowest = TRUE,
         right = TRUE
       ),
-      levels = c('sin reseñas', '1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '101-500 reseñas', '500+ reseñas')
+      levels = c('sin reseñas', '1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '+ 101 reseñas')
     )
   )
 
@@ -633,6 +633,8 @@ ggplot(neighbourhood_freq, aes(x = n, y = reorder(Neighbourhood, n))) +
 
 ```
 
+**`Observaciones clave del gráfico:`**
+
 El gráfico representa la `frecuencia de listados de Airbnb en los top 10 barrios más populares`. Cada barra representa un barrio diferente, ordenados de mayor a menor frecuencia de arriba hacia abajo.
 
 1.  **Barrios (Eje Y)**: Desde la parte superior, los barrios listados son Embajadores, Universidad, Palacio, Sol, Justicia, Cortes, Trafalgar, Palos de Moguer, Goya, y Puerta del Angel.
@@ -640,6 +642,12 @@ El gráfico representa la `frecuencia de listados de Airbnb en los top 10 barrio
 2.  **Frecuencia (Eje X)**: La escala del eje X va desde 0 hasta más de 2000, indicando el número de listados en cada barrio.
 
 El barrio de `Embajadores` tiene la mayor cantidad de listados, seguido por `Universidad y Palacio`. Los barrios de `Goya y Puerta del Angel`, al final de la lista, tienen considerablemente menos listados comparados con los más altos en la gráfica.
+
+**`Suposiciones`**
+
+-   **Suposición 1:** Los barrios con mayor número de listados, como Embajadores y Universidad, probablemente demanden precios más altos debido a su popularidad y atractivos locales.
+
+-   **Suposición 2:** Los barrios con menos listados pueden ofrecer oportunidades para establecer precios competitivos, atrayendo a los huéspedes que buscan opciones más económicas o menos concurridas.
 
 #### **`2. Room.type`**
 
@@ -650,19 +658,26 @@ ggplot(airbnb_data, aes(x = Room.type)) +
   labs(title = "Distribución por Tipo de Habitación", x = "Tipo de Habitación", y = "Frecuencia")
 ```
 
+\
 Las barras representan la frecuencia de cada tipo de habitación en el dataset.
 
 -   **Tipos de Habitación (Eje X)**: Las categorías mostradas son "Entire home/apt" (casa o apartamento completo), "Hotel room" (habitación de hotel), "Private room" (habitación privada) y "Shared room" (habitación compartida).
 
 -   **Frecuencia (Eje Y)**: El eje vertical muestra la cantidad de listados, con una escala que va de 0 a más de 10,000.
 
-Observaciones clave del gráfico:
+**`Observaciones clave del gráfico:`**
 
 -   **Casa o apartamento completo** tiene la frecuencia más alta, indicando que es el tipo de alojamiento más comúnmente listado.
 
 -   **Habitación privada** es el segundo tipo más común, aunque con una frecuencia significativamente menor en comparación con las casas o apartamentos completos.
 
 -   **Habitación de hotel** y **habitación compartida** tienen las menores frecuencias, con la habitación compartida mostrando la menor popularidad entre los listados.
+
+**`Suposiciones`**
+
+-   **Suposición 1:** Los alojamientos tipo "Entire home/apt" (casa o apartamento completo) pueden comandar precios más altos debido a su mayor demanda y la privacidad que ofrecen.
+
+-   **Suposición 2:** Las "Private room" (habitación privada) y "Shared room" (habitación compartida) podrían necesitar precios más ajustados para competir, especialmente en áreas con alta disponibilidad de casas o apartamentos completos.
 
 #### `3. Availability_Cat`
 
@@ -681,7 +696,7 @@ Las barras representan la cantidad de propiedades disponibles según diferentes 
 
 -   **Frecuencia (Eje Y)**: El eje vertical indica la cantidad de listados, con una escala que va desde 0 hasta más de 8000.
 
-Observaciones clave del gráfico:
+**`Observaciones clave del gráfico:`**
 
 -   **No disponible** y **181 a 365 días** son las categorías con la mayor frecuencia, indicando que una gran cantidad de propiedades no están disponibles para alquiler o están disponibles casi todo el año.
 
@@ -689,27 +704,101 @@ Observaciones clave del gráfico:
 
 -   Las propiedades que se alquilan por "91 a 180 días" tienen una frecuencia considerablemente más alta que las de corto plazo pero menor que las de muy largo plazo, reflejando posiblemente una preferencia por alquileres de medio término.
 
+**`Suposiciones:`**
+
+-   **Suposición 1:** Las propiedades listadas como disponibles "181 a 365 días" pueden establecer precios más altos durante temporadas de alta demanda, aprovechando su constante disponibilidad.
+
+-   **Suposición 2:** Propiedades con menor disponibilidad ("Hasta 30 días") podrían necesitar precios dinámicos, ajustándose rápidamente a las demandas del mercado para maximizar los ingresos en periodos cortos.
+
+#### `4. Time_category`
+
 ```{r}
-
-
 # Gráfico para Time_category
 ggplot(airbnb_data, aes(x = Time_category)) +
   geom_bar(fill = "yellow") +
   labs(title = "Distribución de Time_category (Resta entre Scrapping date y Date.last.review)", x = "Time_category", y = "Frecuencia")
 
+```
+
+**`Observaciones clave del gráfico:`**
+
+El gráfico clasifica las propiedades de Airbnb según el tiempo transcurrido desde la última reseña, distribuyendo esta información a lo largo de cinco categorías distintas. El **eje X** representa las categorías de tiempo, y el **eje Y** muestra la frecuencia de listados en cada categoría.
+
+-   **Sin reseñas**: Mayor frecuencia, indicando muchas propiedades sin reseñas recientes.
+
+-   **Hasta 8 semanas**: Frecuencia significativamente más baja, menos propiedades revisadas recientemente.
+
+-   **8 semanas - 6 meses**: Mayor frecuencia, refleja un volumen considerable de propiedades con reseñas moderadamente recientes.
+
+-   **6-12 meses**: Frecuencia más baja que la categoría "8 semanas - 6 meses", muestra menos actividad reciente.
+
+-   **1+ año**: Frecuencia similar a "sin reseñas", muchas propiedades sin reseñas en el último año.
+
+**`Suposiciones:`**
+
+1.  **Suposición 1:** Las propiedades en la categoría "1+ año" sin reseñas recientes podrían ser percibidas como menos deseables, necesitando estrategias de precios más atractivas o promociones para aumentar la ocupación.
+
+2.  **Suposición 2:** Propiedades con reseñas recientes ("Hasta 8 semanas") pueden aprovechar su reciente popularidad para establecer precios ligeramente más altos, atrayendo huéspedes que valoran la frescura y la actividad positiva reciente.`5. Review_category`
+
+```{r}
 # Gráfico para Review_category
 ggplot(airbnb_data, aes(x = Review_category)) +
   geom_bar(fill = "green") +
-  labs(title = "Distribución de Review_category (Categorizacion de Number.of.reviews.per.month)", x = "Review_category", y = "Frecuencia")
+  labs(title = "Distribución de Review_category", subtitle ="(Categorizacion de Number.of.reviews.per.month)", x = "Review_category", y = "Frecuencia")
+```
+
+**`Observaciones clave del gráfico:`**
+
+El gráfico "Distribución de Review_category" muestra la frecuencia de propiedades de Airbnb según el número de reseñas que reciben por mes. Las categorías van desde "sin reseñas" hasta "más de 5 reseñas por mes". El **eje X** categoriza el número de reseñas mensuales y el **eje Y** muestra la frecuencia de propiedades en cada categoría.
+
+-   **Sin Reseñas**: Representa una frecuencia moderada, lo que indica que un número considerable de propiedades no ha recibido reseñas.
+
+-   **0-1/mes**: Esta categoría tiene la frecuencia más alta, sugiriendo que la mayoría de las propiedades reciben entre cero y una reseña por mes.
+
+-   **1-5/mes**: La segunda categoría más frecuente, mostrando una actividad moderada en términos de reseñas.
+
+-   **+5/mes**: Tiene menos frecuencia en comparación con las categorías de 0-1 y 1-5 reseñas por mes, lo que indica que pocas propiedades reciben más de cinco reseñas mensuales.
+
+**`Suposiciones Basadas en el Gráfico:`**
+
+-   **Suposición 1:** Propiedades en la categoría "+5/mes" demuestran alta demanda y satisfacción del cliente, lo que podría justificar precios más elevados debido a la percepción de calidad y experiencia superior.
+
+-   **Suposición 2:** Las propiedades en la categoría "0-1/mes" podrían necesitar ajustar sus precios o mejorar su oferta para incrementar su atractivo y frecuencia de reservas.
+
+```{r}
 
 # Gráfico para Review_Count_Category
 ggplot(airbnb_data, aes(x = Review_Count_Category)) +
   geom_bar(fill = "blue") +
-  labs(title = "Distribución de Review_Count_Category (Categorizacion de Number.of.reviews)", x = "Review_Count_Category", y = "Frecuencia")
+  labs(title = "Distribución de Review_Count_Category", subtitle ="(Categorizacion de Number.of.reviews)", x = "Review_Count_Category", y = "Frecuencia")
 
 ```
 
-##### Variables Numéricas
+**`Observaciones clave del gráfico:`**
+
+El gráfico muestra la distribución de `propiedades de Airbnb según el número total de reseñas recibidas`, categorizando desde "sin reseñas" hasta "más de 101 reseñas". En el **eje X** se categoriza el número total de reseñas y el **eje Y** muestra la frecuencia de propiedades por categoría.
+
+-   **Sin reseñas**: Mayor frecuencia, muchas propiedades sin reseñas.
+
+-   **1 Reseña**: Frecuencia menor que "sin reseñas", notable descenso.
+
+-   **2-10 Reseñas**: Mayor que "1 Reseña", indica varias propiedades moderadamente revisadas.
+
+-   **11-50 Reseñas**: Frecuencia similar a "2-10 Reseñas", refleja estabilidad.
+
+-   **51-100 Reseñas**: Menor que las categorías intermedias, aún significativa.
+
+-   **+101 Reseñas**: La menor frecuencia, pocas propiedades muy revisadas.
+
+**`Suposiciones:`**
+
+1.  **Suposición 1:** Las propiedades con pocas o ninguna reseña pueden necesitar estrategias de precios iniciales más atractivas y campañas promocionales para atraer a los primeros huéspedes y generar esas importantes primeras reseñas, ayudando a establecer credibilidad en la plataforma.
+
+    **Suposición 2:** Las propiedades con un alto número de reseñas (51-100 y más de 101 reseñas) pueden aprovechar su estatus comprobado de popularidad y satisfacción del cliente para justificar precios más altos y atraer a huéspedes dispuestos a pagar más por una experiencia de calidad asegurada.
+
+#### `Variables Numéricas`
+
+#### **`1. Room.Price`**
 
 ```{r}
 # Cargar la librería necesaria
@@ -723,6 +812,12 @@ ggplot(airbnb_data, aes(y = Room.Price)) +
        x = "") +
   theme_minimal()
 
+
+```
+
+#### **`2. Minimum.nights`**
+
+```{r}
 # Boxplot para Minimum.nights
 ggplot(airbnb_data, aes(y = Minimum.nights)) +
   geom_boxplot(fill = "lightgreen", color = "darkgreen") +
@@ -731,6 +826,12 @@ ggplot(airbnb_data, aes(y = Minimum.nights)) +
        x = "") +
   theme_minimal()
 
+
+```
+
+#### **`3. Rooms.rent.by.the.host`**
+
+```{r}
 # Boxplot para Rooms.rent.by.the.host
 ggplot(airbnb_data, aes(y = Rooms.rent.by.the.host)) +
   geom_boxplot(fill = "lightyellow", color = "goldenrod") +
@@ -738,33 +839,13 @@ ggplot(airbnb_data, aes(y = Rooms.rent.by.the.host)) +
        y = "Habitaciones alquiladas por el host",
        x = "") +
   theme_minimal()
-
 ```
 
-```{r}
+#### Cuestiones sobre los datos. 
 
-# Crear un gráfico de densidad
-ggplot(airbnb_data, aes(x = Room.Price)) +
-  geom_density(fill = "blue", alpha = 0.5) +
-  labs(title = "Distribución de Precios", x = "Precio", y = "Densidad")
+**`Pregunta1: ¿Cuáles son los distritos más populares en Airbnb?`**
 
-
-# Crear un gráfico de densidad
-ggplot(airbnb_data, aes(x = Minimum.nights)) +
-  geom_density(fill = "green", alpha = 0.5) +
-  labs(title = "Distribución de Minimum.nights", x = "Minimum.nights", y = "Densidad")
-
-
-# Crear un gráfico de densidad
-ggplot(airbnb_data, aes(x = Rooms.rent.by.the.host)) +
-  geom_density(fill = "yellow", alpha = 0.5) +
-  labs(title = "Distribución de Rooms.rent.by.the.host", x = "Rooms.rent.by.the.host", y = "Densidad")
-
-```
-
-#### **Otros gráficos**
-
-#### **Histograma del vecindario en términos de distritos**
+##### **Histograma del vecindario en términos de distritos**
 
 ```{r}
 
@@ -808,16 +889,9 @@ El gráfico muestra un histograma del vecindario en términos de distritos, cent
 
 -   Los distritos como **Goya** y **Puerta del Angel** muestran las menores frecuencias dentro de este top 10, lo que podría sugerir una menor popularidad o una oferta más limitada de alojamientos en estas áreas comparado con distritos como Embajadores o Universidad.
 
-#### **Presunciones basadas en el gráfico:**
+**`Pregunta2: ¿Existe una correlación entre los precios de las habitaciones y el número de reseñas que reciben, indicando la popularidad o la percepción de valor por parte de los usuarios?`**
 
-1.  **Relación entre precio y popularidad de los distritos**: Podemos examinar si los distritos más populares, tienen precios más altos en promedio, sugiriendo que la demanda podría estar influyendo en el precio.
-
-2.  **Impacto de las reseñas en la frecuencia de reserva**: Con datos sobre el número de reseñas y la frecuencia de estas (por mes), podemos analizar si las propiedades con más reseñas tienden a estar en distritos más populares, indicando posiblemente una mayor satisfacción o mayor rotación de huéspedes.
-
-3.  **Efectos de la disponibilidad en la elección del distrito**: Con la categoría de disponibilidad, podríamos investigar si los distritos con propiedades más disponibles (o menos) son más o menos populares, lo que puede influir en la estrategia de precios y promoción.
-
-\
-**Distribución de precio vs número de reseñas**\
+#####  **Distribución de precio vs número de reseñas**
 
 ```{r}
 ggplot(airbnb_data, aes(x = Room.Price, y = Number.of.reviews)) +
@@ -831,21 +905,15 @@ labs(title = "Distribución de Precio vs Número de Reseñas", x = "Precio de la
 
 #### **Observaciones del Gráfico:**
 
--   La mayoría de las propiedades tienen un precio por debajo de los 1,000 euros y reciben menos de 200 reseñas.
+1.  **Predominio de precios bajos y reseñas moderadas**: La mayoría de los listados tienen precios inferiores a 1,000 euros y menos de 200 reseñas, indicando que las propiedades más asequibles son comunes pero no acumulan muchas reseñas.
 
--   Hay una gran concentración de puntos cerca del origen, lo que sugiere que muchas propiedades tienen precios bajos y un número moderado o bajo de reseñas.
+2.  **Propiedades caras con reseñas dispersas**: Algunas propiedades con precios superiores a 2,500 euros tienen desde cero hasta muchas reseñas, lo que sugiere que un precio más alto no garantiza una mayor popularidad.
 
--   Existen unas pocas propiedades con precios muy altos (más de 2,500 euros) y con variados niveles de reseñas, incluyendo algunas con muy pocas o ninguna reseña.
+3.  **Picos de popularidad a precios accesibles**: Un número significativo de reseñas se observa en propiedades con precios razonables, lo que indica que ciertas propiedades a precios moderados son muy populares.
 
--   Propiedades con un gran número de reseñas (más de 200) generalmente tienen precios inferiores a 1,000 euros.
+En resumen, no existe una correlación clara entre precios altos y un mayor número de reseñas, implicando que otros factores como ubicación y calidad podrían influir más en la popularidad.
 
-#### **Presunciones y Análisis Basados en los Datos del Dataset:**
-
-1.  **Precio vs Popularidad**: Parece haber una relación inversa entre el precio y el número de reseñas, donde las propiedades más económicas tienden a tener más reseñas. Esto podría sugerir que las propiedades más asequibles son más populares o tienen una mayor rotación de huéspedes.
-
-2.  **Propiedades de Alta Gama**: Las propiedades con precios muy altos tienden a tener menos reseñas, lo que podría indicar una menor ocupación o que estas propiedades son alquiladas menos frecuentemente. Esto puede deberse a que son opciones menos asequibles para la mayoría de los viajeros.
-
-3.  **Segmentación del Mercado**: La distribución de precios y reseñas puede ayudar a identificar diferentes segmentos de mercado dentro del dataset de Airbnb, como alojamientos económicos, de rango medio y de lujo.
+**`Pregunta3: ¿Cómo varían los precios promedios de las diferentes tipos de habitaciones en Airbnb, y qué tipo de habitación tiene el precio promedio más alto en Madrid?`**
 
 \
 **Precio promedio vs tipo de habitación**\
@@ -877,13 +945,7 @@ El gráfico muestra el precio promedio de las habitaciones de Airbnb en relació
 
 -   **Habitación Compartida**: Es la opción más económica, con el precio promedio más bajo entre los tipos de habitaciones mostrados.
 
-### **Presunciones y Análisis Basados en el Gráfico:**
-
-1.  **Preferencia y Precio**: Los precios reflejan posiblemente la preferencia de privacidad y espacio, con opciones más privadas y espaciosas como "Entire home/apt" que tienen un precio más alto.
-
-2.  **Oferta y Demanda**: La diferencia en los precios podría reflejar la oferta y demanda de cada tipo de habitación, donde habitaciones completas y privadas son posiblemente más demandadas para largas estancias o grupos más grandes.
-
-3.  **Presupuesto de Viajeros**: Los precios pueden también indicar el presupuesto típico de los viajeros que eligen diferentes tipos de habitaciones, con viajeros de presupuesto limitado optando más probablemente por habitaciones compartidas o privadas.
+**`Pregunta4: ¿Cómo se distribuyen los diferentes tipos de habitaciones en los distintos distritos de Madrid y qué distritos presentan una mayor diversidad de opciones de alojamiento?`**
 
 #### Tipo de propiedad y áreas (distritos) 
 
@@ -895,6 +957,8 @@ ggplot(data = airbnb_data, aes(x = Neighbourhood, fill = `Room.type`)) + geom_ba
 
 El gráfico muestra la distribución de los diferentes tipos de propiedades en cada distrito de Madrid. Cada barra representa un distrito y los segmentos de cada barra están coloreados para representar los diferentes tipos de propiedad. Los segmentos de cada barra se apilan unos sobre otros.
 
+**`Pregunta5: ¿Cómo varían los precios de los alojamientos de Airbnb entre diferentes distritos de Madrid y cuáles presentan la mayor variabilidad en sus precios?`**
+
 #### Distribución de precios vs distrito 
 
 ```{r}
@@ -904,7 +968,7 @@ ggplot(data = airbnb_data, aes(x = Neighbourhood, y = Room.Price)) + geom_boxplo
 \
 Este gráfico representa la distribución de los precios para cada distrito. Cada caja muestra la distribución de los precios en un distrito específico, donde la línea en el centro de la caja representa la mediana de los precios. Los puntos individuales fuera de los bigotes representan valores atípicos potenciales.
 
-#### Tendencia mediana y puntuación de reseñas 
+#### (Pending) Tendencia mediana y puntuación de reseñas 
 
 ```{r}
 ggplot(data = airbnb_data, aes(x = Room.Price, y = Number.of.reviews)) + geom_point() + geom_smooth(method = "lm", se = FALSE, color = "red") + labs(x = "Precio", y = "Puntuación  de reseñas") + ggtitle("Tendencia de la mediana de precios por puntuación de reseñas por distrito en Madrid")
@@ -916,6 +980,8 @@ Este gráfico muestra la relación entre el precio y el puntuación de las rese�
 El gráfico incluye una línea de tendencia (en rojo) ajustada mediante un modelo de regresión lineal. Esta línea de tendencia representa la tendencia general entre el precio y el número de reseñas: si la línea de tendencia tiene una pendiente positiva, indica una relación positiva entre el precio y el número de reseñas, mientras que una pendiente negativa indica una relación negativa.
 
 #### Gráfico de Distribución en Madrid
+
+**`Pregunta: ¿Cómo se distribuyen geográficamente los listados de Airbnb en Madrid y qué áreas muestran mayor concentración de alojamientos?`**
 
 Las columnas `Latitude` y `Longitude` están disponibles, podemos crear un mapa de puntos en Madrid:
 
@@ -987,6 +1053,8 @@ madrid_map
 
 
 ```
+
+**`Pregunta: ¿Qué variables están más fuertemente correlacionadas con el precio de los alojamientos en Airbnb, como la cantidad de noches mínimas, el número de reseñas, o la cantidad de habitaciones que renta el anfitrión?`**
 
 #### Mapa de Calor de Correlación
 
