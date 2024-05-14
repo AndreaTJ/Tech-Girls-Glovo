@@ -20,9 +20,12 @@ if (!require("ggmap")) install.packages("ggmap")
 if (!require("leaflet")) install.packages("leaflet")
 if (!require("leaflet.extras")) install.packages("leaflet.extras")
 if (!require("GGally")) install.packages("GGally")
-if (!require(utils)) {library(utils)
-}
+if (!require("visdat")) install.packages("visdat")
+if (!require("naniar")) install.packages("naniar")
 
+```
+
+```{r}
 # Cargar las librerías
 library(tidyverse)
 library(corrplot)
@@ -30,6 +33,8 @@ library(ggmap)
 library(leaflet)
 library(leaflet.extras)
 library(GGally)
+library(visdat)
+library(naniar)
 
 ```
 
@@ -50,6 +55,10 @@ library(GGally)
 **`Leaflet.extras:`** Extiende las funcionalidades de la librería leaflet proporcionando características adicionales para la creación de mapas interactivos más avanzados.
 
 **`GGally:`** Proporciona extensiones para ggplot2, permitiendo crear gráficos de matriz y otras visualizaciones complejas de forma más sencilla.
+
+visdat - pending
+
+naniar - pending
 
 ## **`Carga de datos para el análisis.`**
 
@@ -230,6 +239,50 @@ airbnb_data$Country <- droplevels(airbnb_data$Country)
 summary(airbnb_data[, c("City", "Country")])
 ```
 
+### `Neighbourhood`
+
+Hemos notado que en los barrios, parecen haber barrios que no pertenecen a Madrid:\
+
+```{r}
+names(neighbourhood_freq[neighbourhood_freq == 0])
+
+```
+
+```{r}
+
+print(dim(airbnb_data))
+
+# Calcular la tabla de frecuencias para la variable Neighbourhood
+neighbourhood_freq <- table(airbnb_data$Neighbourhood)
+
+# Identificar las categorías con frecuencia cero
+zero_freq_neighbourhoods <- names(neighbourhood_freq[neighbourhood_freq == 0])
+
+# Filtrar el dataset para excluir filas con Neighbourhoods de frecuencia cero
+airbnb_data <- airbnb_data %>%
+  filter(!(Neighbourhood %in% zero_freq_neighbourhoods))
+
+# Revisar las dimensiones del nuevo dataset para confirmar la eliminación
+print(dim(airbnb_data))
+```
+
+Sin embargo siguen apareciendo los barrios desechados, como parte de `Neighbourhood`. Ya no los necesitamos, así los vamos a eliminar.
+
+```{r}
+airbnb_data$Neighbourhood <- droplevels(airbnb_data$Neighbourhood)
+
+```
+
+```{r}
+# Identificar las categorías con frecuencia cero
+names(neighbourhood_freq[neighbourhood_freq == 0])
+
+# Revisar las dimensiones del nuevo dataset para confirmar la eliminación
+print(dim(airbnb_data))
+
+summary(airbnb_data[, c("Neighbourhood")])
+```
+
 ### `Availibility`
 
 Transformamos la columna **`Availibility`** en una variable categórica, definiendo rangos específicos que representan distintos niveles de disponibilidad.\
@@ -336,6 +389,18 @@ resultados_con_NA_o_ceros <- resultados[apply(resultados, 1, function(x) any(x >
 print(resultados_con_NA_o_ceros)
 ```
 
+Abajo, podemos ver un gráfico que ilustra claramente todas las atributos que tienen valores nulos. Enseñandonos su porcentaje con respecto al total de datos.
+
+Solo `Date.last.review` y `Number.of.reviews.per.month` tienen valores nulos, que representan alrededor del 25% de sus datos. El resto de atributos, no presentan valores nulos.
+
+```{r}
+library(visdat)
+library(naniar)
+vis_miss(airbnb_data, sort_miss = TRUE)
+```
+
+### `Tratamiento de los valores nulos y ceros.`
+
 #### `Room.Price`
 
 ```{r}
@@ -343,7 +408,7 @@ paste("Total suma de filas de Room.Price con ceros:", sum(airbnb_data$Room.Price
 
 ```
 
-Eliminamos el registro con `Room.Price` de cero porque probablemente es un error de entrada, ya que es poco plausible que una habitación de hotel tenga un coste cero. Este error podría distorsionar nuestro análisis estadísticos y posterior modelo predictivo. Eliminando este dato, aseguramos la calidad y consistencia del dataset.
+Eliminamos el registro con `Room.Price` de cero porque probablemente es un error de entrada, ya que es poco plausible que una habitación de hotel tenga un coste cero. Este error podría distorsionar nuestro análisis estadístico y posterior modelo predictivo. Eliminando este dato, aseguramos la calidad y consistencia del dataset.
 
 #### `Number.of.reviews`, `Date.last.review` y `Number.of.reviews.per.month.`
 
@@ -579,7 +644,7 @@ if (nrow(filas_duplicadas) == 0) {
 
 Utilizamos **`duplicated()`** para crear un vector que identifica filas repetidas en **`airbnb_data`**, almacenando dichas filas en **`filas_duplicadas`**. Luego, contamos cuantas filas hay en `filas_duplicadas`, con `nrow()`.
 
-Dependiendo del resultado, imprime un mensaje indicando la presencia o ausencia de filas duplicadas. En este caso, podemos afirmar que no hay filas duplicadas.
+Vemos que no hay filas duplicadas. 
 
 ## `Resumen cambios en las variables.`
 
@@ -693,6 +758,20 @@ El barrio de `Embajadores` tiene la mayor cantidad de listados, seguido por `Uni
 -   **Suposición 1:** Los barrios con mayor número de listados, como Embajadores y Universidad, probablemente demanden precios más altos debido a su popularidad y atractivos locales.
 
 -   **Suposición 2:** Los barrios con menos listados pueden ofrecer oportunidades para establecer precios competitivos, atrayendo a los huéspedes que buscan opciones más económicas o menos concurridas.
+
+```{r}
+# Filtrar los datos para incluir sólo los top 10 barrios
+top_neighbourhoods <- c("Embajadores", "Universidad", "Palacio", "Sol", "Justicia", "Cortes", "Trafalgar", "Palos de Moguer", "Goya", "Puerta del Angel")
+filtered_data <- airbnb_data[airbnb_data$Neighbourhood %in% top_neighbourhoods,]
+
+# Crear un boxplot de precios por barrio
+library(ggplot2)
+ggplot(filtered_data, aes(x = Neighbourhood, y = Room.Price)) +
+  geom_boxplot() +
+  coord_flip() +  # Para hacerlo horizontal
+  labs(title = "Distribución de Precios por Barrio", x = "Barrio", y = "Precio por noche") +
+  theme_minimal()
+```
 
 #### **`2. Room.type`**
 
@@ -888,6 +967,67 @@ ggplot(airbnb_data, aes(y = Rooms.rent.by.the.host)) +
   theme_minimal()
 ```
 
+### **`Outliers`**
+
+```{r}
+library(dplyr)
+library(tidyr)  # Para pivotar el dataframe
+
+# Filtrar sólo columnas numéricas
+numeric_data <- airbnb_data %>% 
+  select(Room.ID, Host.ID, Room.Price, Minimum.nights, Number.of.reviews, Number.of.reviews.per.month, Rooms.rent.by.the.host, Availibility)
+
+# Calcular y mostrar el porcentaje de outliers para cada columna numérica
+outliers_summary <- numeric_data %>% 
+  summarise(across(everything(), ~ {
+    q1 <- quantile(., 0.25, na.rm = TRUE)
+    q3 <- quantile(., 0.75, na.rm = TRUE)
+    irq <- q3 - q1
+    lower_bound <- q1 - 1.5 * irq
+    upper_bound <- q3 + 1.5 * irq
+    perc_outliers <- mean(. < lower_bound | . > upper_bound, na.rm = TRUE) * 100
+    sprintf("%.2f%%", perc_outliers)
+  }, .names = "outliers_in_{.col}")) %>%
+  pivot_longer(cols = everything(), names_to = "Variable", values_to = "Percentage_Outliers")
+
+# Imprimir el resumen de outliers como una tabla
+print(outliers_summary)
+
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(purrr)
+
+# Filtrar solo columnas categóricas de tipo factor
+categorical_data <- airbnb_data %>%
+  select(where(is.factor))
+
+# Calcula las tablas de frecuencia para cada variable categórica y ordena por porcentaje
+frequency_tables <- categorical_data %>%
+  map(~ {
+    freq <- table(.x)
+    # Crear un tibble y ordenarlo por porcentaje de manera descendente
+    tibble(
+      Category = names(freq),
+      Frequency = as.integer(freq),
+      Percentage = round(100 * prop.table(freq), 2)
+    ) %>%
+    arrange(Percentage)  # Ordenar los resultados por porcentaje de menor a mayor
+  })
+
+# Iterar sobre la lista de tablas de frecuencia y imprimir cada una con su nombre de variable
+names(frequency_tables) <- names(categorical_data)  # Asegura que cada tabla tenga el nombre de su variable correspondiente
+walk2(names(frequency_tables), frequency_tables, ~ {
+  cat("\nTabla de Frecuencia para la Variable:", .x, "\n")
+  print(.y)
+})
+
+
+
+```
+
 #### Cuestiones sobre los datos.
 
 **`Pregunta1: ¿Cuáles son los distritos más populares en Airbnb?`**
@@ -1008,20 +1148,9 @@ ggplot(data = airbnb_data, aes(x = Neighbourhood, y = Room.Price)) + geom_boxplo
 ```
 
 \
-Este gráfico representa la distribución de los precios para cada distrito. Cada caja muestra la distribución de los precios en un distrito específico, donde la línea en el centro de la caja representa la mediana de los precios. Los puntos individuales fuera de los bigotes representan valores atípicos potenciales.
+Este gráfico representa la distribución de los precios para cada distrito. Cada caja muestra la distribución de los precios en un distrito específico, donde la línea en el centro de la caja representa la mediana de los precios. Los puntos individuales fuera de los bigotes representan valores atípicos potenciales. 
 
-#### (Pending) Tendencia mediana y puntuación de reseñas 
-
-```{r}
-ggplot(data = airbnb_data, aes(x = Room.Price, y = Number.of.reviews)) + geom_point() + geom_smooth(method = "lm", se = FALSE, color = "red") + labs(x = "Precio", y = "Puntuación  de reseñas") + ggtitle("Tendencia de la mediana de precios por puntuación de reseñas por distrito en Madrid")
-```
-
-\
-Este gráfico muestra la relación entre el precio y el puntuación de las reseñas recibidas. Cada punto en el gráfico representa un listado individual, donde la posición horizontal del punto indica el precio y la posición vertical indica el número de reseñas.
-
-El gráfico incluye una línea de tendencia (en rojo) ajustada mediante un modelo de regresión lineal. Esta línea de tendencia representa la tendencia general entre el precio y el número de reseñas: si la línea de tendencia tiene una pendiente positiva, indica una relación positiva entre el precio y el número de reseñas, mientras que una pendiente negativa indica una relación negativa.
-
-#### Gráfico de Distribución en Madrid
+### **`Gráfico de Distribución en Madrid`**
 
 **`Pregunta: ¿Cómo se distribuyen geográficamente los listados de Airbnb en Madrid y qué áreas muestran mayor concentración de alojamientos?`**
 
@@ -1123,4 +1252,9 @@ Ahora vamos a generar el dataset procesado:\
 
 # Exportar el dataframe a CSV con write.csv perteneciente a  'utils' que es un paquete base de R y siempre está cargado.
 write.csv(airbnb_data, "../data/processed/dataset_airbnb_procesado.csv", row.names = FALSE)
+```
+
+```{r}
+rmarkdown::render("cuaderno.qmd", output_format = "html_document", output_file = "output.html")
+
 ```
