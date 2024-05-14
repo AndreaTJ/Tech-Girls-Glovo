@@ -241,47 +241,33 @@ summary(airbnb_data[, c("City", "Country")])
 
 ### `Neighbourhood`
 
-Hemos notado que en los barrios, parecen haber barrios que no pertenecen a Madrid:\
+Hemos notado que en los barrios, parecen haber barrios que no pertenecen a Madrid. Vamos a verlo: 
 
 ```{r}
-names(neighbourhood_freq[neighbourhood_freq == 0])
+# Revisamos las frecuencias de cada barrio
+table_neighbourhoods <- table(airbnb_data$Neighbourhood)
+
+# Mostrar los barrios con frecuencia cero
+zero_freq_neighbourhoods <- table_neighbourhoods[table_neighbourhoods == 0]
+print(zero_freq_neighbourhoods)
 
 ```
+Vemos que hay 0 alojamientos en Madrid, para esos barrios, porque no son barrios madrileños. 
+Eliminamos esos niveles. 
 
 ```{r}
 
-print(dim(airbnb_data))
-
-# Calcular la tabla de frecuencias para la variable Neighbourhood
-neighbourhood_freq <- table(airbnb_data$Neighbourhood)
-
-# Identificar las categorías con frecuencia cero
-zero_freq_neighbourhoods <- names(neighbourhood_freq[neighbourhood_freq == 0])
-
-# Filtrar el dataset para excluir filas con Neighbourhoods de frecuencia cero
-airbnb_data <- airbnb_data %>%
-  filter(!(Neighbourhood %in% zero_freq_neighbourhoods))
-
-# Revisar las dimensiones del nuevo dataset para confirmar la eliminación
-print(dim(airbnb_data))
-```
-
-Sin embargo siguen apareciendo los barrios desechados, como parte de `Neighbourhood`. Ya no los necesitamos, así los vamos a eliminar.
-
-```{r}
+# Eliminar esos niveles del factor
 airbnb_data$Neighbourhood <- droplevels(airbnb_data$Neighbourhood)
-
 ```
 
+Ahora podemos comprobar, que esos niveles se ha removido: 
 ```{r}
-# Identificar las categorías con frecuencia cero
-names(neighbourhood_freq[neighbourhood_freq == 0])
+# Verificar nuevamente las frecuencias para confirmar que los niveles cero han sido eliminados
+table(airbnb_data$Neighbourhood)
 
-# Revisar las dimensiones del nuevo dataset para confirmar la eliminación
-print(dim(airbnb_data))
-
-summary(airbnb_data[, c("Neighbourhood")])
 ```
+
 
 ### `Availibility`
 
