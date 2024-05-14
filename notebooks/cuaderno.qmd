@@ -8,7 +8,52 @@ editor: visual
 
 Este análisis explora un conjunto de datos de Airbnb, específicamente centrado en las listas de alojamientos disponibles en Madrid, España. Los datos han sido descargados desde el portal público OpenDataSoft, una plataforma que facilita el acceso a diversos datasets abiertos para análisis y aplicaciones de datos. Puedes acceder directamente al dataset utilizado a través del siguiente enlace: [Airbnb Listings en OpenDataSoft](https://public.opendatasoft.com/explore/dataset/air-bnb-listings/table/?disjunctive.neighbourhood&disjunctive.column_10&disjunctive.city&q=Madrid&location=7,40.5931,-4.422&basemap=jawg.light).
 
-En primer lugar, leemos el dataset, se especifica que el separador de campos es un punto y coma.
+## **`Instalacion y Carga de Pre-requerimientos`**
+
+Previo al análisis, vamos a instalar y cargar los paquetes necesarios:
+
+```{r}
+# Silas librerias no están ya instaladas , las instala. 
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("corrplot")) install.packages("corrplot")
+if (!require("ggmap")) install.packages("ggmap")
+if (!require("leaflet")) install.packages("leaflet")
+if (!require("leaflet.extras")) install.packages("leaflet.extras")
+if (!require("GGally")) install.packages("GGally")
+if (!require(utils)) {library(utils)
+}
+
+# Cargar las librerías
+library(tidyverse)
+library(corrplot)
+library(ggmap)
+library(leaflet)
+library(leaflet.extras)
+library(GGally)
+
+```
+
+### **`Descripción de Librerías de R que hemos utilizado:`**
+
+**`Tidyverse:`** La librería tidyverse carga en R un conjunto de paquetes que comparten una filosofía común de manipulación y visualización de datos, incluyendo dplyr, ggplot2 y otros paquetes que facilitan el flujo de trabajo de análisis de datos en R.
+
+**`Dplyr:`** Proporciona un conjunto de funciones para realizar operaciones de manipulación de datos como filtrado, selección, agregación y unión de datos.
+
+**`Ggplot2:`** Permite crear una amplia variedad de gráficos de alta calidad de forma sencilla y flexible.
+
+**`Corrplot`**: Se utiliza para visualizar matrices de correlación de datos de una manera clara y concisa, lo que facilita la identificación de patrones de correlación entre variables.
+
+**`Ggmap:`** Esta librería se utiliza para visualizar datos espaciales en mapas utilizando ggplot2. Permite superponer datos sobre mapas de Google Maps, OpenStreetMap y otros proveedores de mapas.
+
+**`Leaflet:`** Es una librería para la creación de mapas interactivos en R. Permite crear mapas interactivos con características como marcadores, polígonos, superposiciones y herramientas de zoom.
+
+**`Leaflet.extras:`** Extiende las funcionalidades de la librería leaflet proporcionando características adicionales para la creación de mapas interactivos más avanzados.
+
+**`GGally:`** Proporciona extensiones para ggplot2, permitiendo crear gráficos de matriz y otras visualizaciones complejas de forma más sencilla.
+
+## **`Carga de datos para el análisis.`**
+
+Leemos el dataset desde su ubicación y especificamos que el separador de campos es un punto y coma.
 
 ```{r}
 library(tidyverse)
@@ -18,7 +63,7 @@ airbnb_data_raw <- read.csv("../data/raw/air-bnb-listings.csv", sep = ';')
 
 ```
 
-Mostramos las primeras filas del dataset. Esto nos permite comprobar que los datos se han cargado correctamente.
+Mostramos las primeras filas del dataset, para comprobar que los datos se han cargado correctamente.
 
 ```{r}
 # Ver las primeras filas de los datos
@@ -160,7 +205,6 @@ Vemos que no todos los registros que pertenecen a España, son de Madrid.
 Hacemos un filtrado en el que solo mantenemos las filas donde el valor de la columna `City es Madrid.`
 
 ```{r}
-library(dplyr)
 
 # Filtrar el dataset para mantener solo las filas donde la ciudad es Madrid
 airbnb_data <- airbnb_data |> filter(City == "Madrid")
@@ -248,8 +292,6 @@ Parece que la columna `Location` es la combinación de `Country, City, y Neighbo
 
 ```{r}
 
-library(dplyr)
-
 #Crea una nueva columna temporal llamada Combined que combina Country,City y Neighbourhood, separados por ",". 
 
 airbnb_data <- airbnb_data |> mutate(Combined = paste(Country, City, Neighbourhood, sep = ", "))
@@ -267,11 +309,15 @@ table(airbnb_data$Location_Match) #Cuenta solo lo que es TRUE
 
 Comparamos la columna `Location` con la combinación de `Country, City, y Neighbourhood`.
 
-Podemos ver que son iguales. `Location` redundante por lo que se puede eliminar:
+Podemos ver que son iguales. `Location` es redundante por lo que se puede eliminar.
+
+También elimaremos las columnas temporales que creamos para llegar a esta conclusión`Location_Match y Combined:`
 
 ```{r}
-#Eliminar Location
+#Eliminar Location, Location_Match y Combined
 airbnb_data <- select(airbnb_data, -Location)
+airbnb_data <- select(airbnb_data, -Location_Match)
+airbnb_data <- select(airbnb_data, -Combined)
 ```
 
 ## `Estudio de los valores nulos y ceros.`
@@ -289,6 +335,15 @@ resultados <- data.frame(
 resultados_con_NA_o_ceros <- resultados[apply(resultados, 1, function(x) any(x > 0)), ]
 print(resultados_con_NA_o_ceros)
 ```
+
+#### `Room.Price`
+
+```{r}
+paste("Total suma de filas de Room.Price con ceros:", sum(airbnb_data$Room.Price == 0))
+
+```
+
+Eliminamos el registro con `Room.Price` de cero porque probablemente es un error de entrada, ya que es poco plausible que una habitación de hotel tenga un coste cero. Este error podría distorsionar nuestro análisis estadísticos y posterior modelo predictivo. Eliminando este dato, aseguramos la calidad y consistencia del dataset.
 
 #### `Number.of.reviews`, `Date.last.review` y `Number.of.reviews.per.month.`
 
@@ -320,13 +375,20 @@ print(result)
 
 ```
 
-Creamos una columna llamada `check`. Esta columna nos ayuda a ver si el número de reseñas es cero y, al mismo tiempo, si las fechas de la última reseña y el promedio de reseñas por mes están vacíos. Si se cumplen estas condiciones, la columna indica **True**; si no, muestra **False**.
+Creamos una columna llamada `check`. Esta columna nos ayuda a ver si el `número de reseñas =  0` y, al mismo tiempo, si las `fechas de la última reseña y el promedio de reseñas por mes están vacíos`. Si se cumplen estas condiciones, la columna indica **True**; si no, muestra **False**.
 
-Comparamos la cuenta de los registros donde el número de reseñas es cero, contra la columna `check.`
+Comparamos, la columna `check` con la cuenta de los registros donde el número de reseñas es cero.
 
 Este paso nos permite comprobar si nuestra teoría sobre la relación entre estas variables se sostiene.
 
-**Tiene sentido, ya que si un alojamiento no ha recibido reseñas, no podría tener una fecha de última reseña ni un promedio de reseñas mensuales**.
+**Y si, tiene sentido, ya que si un alojamiento no ha recibido reseñas, no podría tener una fecha de última reseña ni un promedio de reseñas mensuales**.
+
+Ahora elimaremos la columna temporal `check.`
+
+```{r}
+#Eliminar check
+airbnb_data <- select(airbnb_data, -check)
+```
 
 ##### `Categorización de Number.of.reviews` y `Number.of.reviews.per.month`
 
@@ -364,8 +426,6 @@ Como podemos comprobar, el cambio se ha hecho correctamente. Los `5400 registros
 Ahora categorizamos la variable:
 
 ```{r}
-library(dplyr)
-
 airbnb_data <- airbnb_data |> 
   mutate(
     Review_category = factor(
@@ -393,8 +453,6 @@ Si el valor es cero, lo categorizamos como "sin reseñas". Luego, los valores se
 Ahora categorizamos la variable `Number.of.reviews`:
 
 ```{r}
-library(dplyr)
-
 airbnb_data <- airbnb_data |> 
   mutate(
     Review_Count_Category = factor(
@@ -464,8 +522,6 @@ ggplot(airbnb_data, aes(x = time_since_last_review)) +
 Para poder realizar un mejor análisis de los datos, vamos a categorizar las nueva columna: **`time_since_last_review`**
 
 ```{r}
-library(dplyr)
-
 airbnb_data <- airbnb_data |>
   mutate(
     Time_category = factor(
@@ -497,17 +553,33 @@ summary(airbnb_data$Time_category)
 
 ```{r}
 #Calculo el total de filas con ceros 
-paste("Total suma de filas con ceros:", sum(airbnb_data$Availibility == 0))
+paste("Total suma de filas con ceros en la columna Availibility es:", sum(airbnb_data$Availibility == 0))
 ```
 
 Los ceros de **`Availibility`**, se han tratado en la columna **`Availibility_Cat`** como alojamientos "No disponibles"
 
 ```{r}
-summary(airbnb_data$Availability_Cat)
-
+paste("Total suma de filas con 'No disponible' en la columna Availability_Cat es:", sum(airbnb_data$Availability_Cat == "No disponible"))
 ```
 
 Vemos que el recuento de "No disponible" en **`Availibility_Cat`**, coincide con el recuento de ceros en **`Availibility.`**
+
+## **`Comprobación de Duplicados`**
+
+Veamos sin en nuestro dataset, hay filas duplicadas.
+
+```{r}
+filas_duplicadas <- airbnb_data[duplicated(airbnb_data), ]
+if (nrow(filas_duplicadas) == 0) {
+  print("No hay filas duplicadas en el dataset.")
+} else {
+  print("Se han encontrado filas duplicadas en el dataset.")
+}
+```
+
+Utilizamos **`duplicated()`** para crear un vector que identifica filas repetidas en **`airbnb_data`**, almacenando dichas filas en **`filas_duplicadas`**. Luego, contamos cuantas filas hay en `filas_duplicadas`, con `nrow()`.
+
+Dependiendo del resultado, imprime un mensaje indicando la presencia o ausencia de filas duplicadas. En este caso, podemos afirmar que no hay filas duplicadas.
 
 ## `Resumen cambios en las variables.`
 
@@ -553,6 +625,7 @@ Resumen condensado y ajustado de las transformaciones aplicadas:
 
 -   Análisis de valores nulos y ceros; categorizados para facilitar análisis:
     -   **Review_Count_Category** (basado en `Number.of.reviews`):
+
         -   "sin reseñas"
         -   "1 reseña"
         -   "2-10 reseñas"
@@ -560,7 +633,9 @@ Resumen condensado y ajustado de las transformaciones aplicadas:
         -   "51-100 reseñas"
         -   "101-500 reseñas"
         -   "500+ reseñas"
+
     -   **Review_category** (basado en `Number.of.reviews.per.month`):
+
         -   "sin reseñas" (incluye registros nulos y ceros)
         -   "0-1/mes"
         -   "1-5/mes"
@@ -568,36 +643,9 @@ Resumen condensado y ajustado de las transformaciones aplicadas:
         -   "10-20/mes"
         -   "20+ mes"
 
-Este resumen aclara y especifica las transformaciones y categorizaciones realizadas en cada variable, alineándolas con las operaciones y el análisis llevado a cabo en tu código R.
-
-```{r}
-if (!require(writexl)) {
-    install.packages("writexl")
-}
-library(writexl)
-# Exportar el dataframe
-write_xlsx(airbnb_data, "dataset_airbnb_procesado1.xlsx")
-
-```
+También se ha comprobado que no existan duplicados en el dataset.
 
 ## `Gráficos`
-
-```{r}
-# Instalar paquetes si no están instalados
-if (!require("readxl")) install.packages("readxl")
-if (!require("ggplot2")) install.packages("ggplot2")
-if (!require("corrplot")) install.packages("corrplot")
-if (!require("ggmap")) install.packages("ggmap")
-if (!require("dplyr")) install.packages("dplyr")
-
-# Cargar paquetes
-library(readxl)
-library(ggplot2)
-library(corrplot)
-library(ggmap)
-library(dplyr)
-
-```
 
 ### **`Gráficos por variables`**
 
@@ -609,9 +657,6 @@ library(dplyr)
 #Histogramas
 
 # Grafico para barrio  
-
-library(ggplot2)
-library(dplyr)
 
 # Calcular la frecuencia de cada barrio
 neighbourhood_freq <- airbnb_data |>
@@ -738,7 +783,9 @@ El gráfico clasifica las propiedades de Airbnb según el tiempo transcurrido de
 
 1.  **Suposición 1:** Las propiedades en la categoría "1+ año" sin reseñas recientes podrían ser percibidas como menos deseables, necesitando estrategias de precios más atractivas o promociones para aumentar la ocupación.
 
-2.  **Suposición 2:** Propiedades con reseñas recientes ("Hasta 8 semanas") pueden aprovechar su reciente popularidad para establecer precios ligeramente más altos, atrayendo huéspedes que valoran la frescura y la actividad positiva reciente.`5. Review_category`
+2.  **Suposición 2:** Propiedades con reseñas recientes ("Hasta 8 semanas") pueden aprovechar su reciente popularidad para establecer precios ligeramente más altos, atrayendo huéspedes que valoran la frescura y la actividad positiva reciente.
+
+#### 5. **`Review_category`**
 
 ```{r}
 # Gráfico para Review_category
@@ -764,6 +811,8 @@ El gráfico "Distribución de Review_category" muestra la frecuencia de propieda
 -   **Suposición 1:** Propiedades en la categoría "+5/mes" demuestran alta demanda y satisfacción del cliente, lo que podría justificar precios más elevados debido a la percepción de calidad y experiencia superior.
 
 -   **Suposición 2:** Las propiedades en la categoría "0-1/mes" podrían necesitar ajustar sus precios o mejorar su oferta para incrementar su atractivo y frecuencia de reservas.
+
+#### `6. Review_Count_Category`
 
 ```{r}
 
@@ -801,8 +850,6 @@ El gráfico muestra la distribución de `propiedades de Airbnb según el número
 #### **`1. Room.Price`**
 
 ```{r}
-# Cargar la librería necesaria
-library(ggplot2)
 
 # Boxplot para Room.Price
 ggplot(airbnb_data, aes(y = Room.Price)) +
@@ -841,17 +888,13 @@ ggplot(airbnb_data, aes(y = Rooms.rent.by.the.host)) +
   theme_minimal()
 ```
 
-#### Cuestiones sobre los datos. 
+#### Cuestiones sobre los datos.
 
 **`Pregunta1: ¿Cuáles son los distritos más populares en Airbnb?`**
 
 ##### **Histograma del vecindario en términos de distritos**
 
 ```{r}
-
-library(ggplot2)
-library(dplyr)
-
 # Calcular la frecuencia de cada distrito
 distrito_frecuencia <- airbnb_data %>%
   count(Neighbourhood) %>%
@@ -891,7 +934,7 @@ El gráfico muestra un histograma del vecindario en términos de distritos, cent
 
 **`Pregunta2: ¿Existe una correlación entre los precios de las habitaciones y el número de reseñas que reciben, indicando la popularidad o la percepción de valor por parte de los usuarios?`**
 
-#####  **Distribución de precio vs número de reseñas**
+##### **Distribución de precio vs número de reseñas**
 
 ```{r}
 ggplot(airbnb_data, aes(x = Room.Price, y = Number.of.reviews)) +
@@ -919,7 +962,6 @@ En resumen, no existe una correlación clara entre precios altos y un mayor núm
 **Precio promedio vs tipo de habitación**\
 
 ```{r}
-library(ggplot2)
 
 ggplot(airbnb_data, aes(x = Room.type, y = Room.Price)) +
   geom_bar(stat = "summary", fun = "mean", fill = "lightgreen", color = "darkgreen") +
@@ -986,12 +1028,6 @@ El gráfico incluye una línea de tendencia (en rojo) ajustada mediante un model
 Las columnas `Latitude` y `Longitude` están disponibles, podemos crear un mapa de puntos en Madrid:
 
 ```{r}
-# Instalar y cargar los paquetes necesarios
-if (!require("leaflet")) install.packages("leaflet")
-library(leaflet)
-if (!require("leaflet.extras")) install.packages("leaflet.extras")
-library(leaflet.extras)
-
 
 # Crear un mapa con Leaflet
 madrid_map <- leaflet(data = airbnb_data) |>
@@ -1014,10 +1050,6 @@ madrid_map
 ```
 
 ```{r}
-# Cargar el paquete dplyr para manipulación de datos
-if (!require("dplyr")) install.packages("dplyr")
-library(dplyr)
-
 # Definir una función para determinar el color basado en el precio
 get_color <- function(price) {
   if (price < 50) {
@@ -1029,19 +1061,13 @@ get_color <- function(price) {
   }
 }
 
-# Añadir una nueva columna al dataset con los colores calculados
-airbnb_data <- airbnb_data %>%
-  mutate(Color = sapply(Room.Price, get_color))
-
-# Crear el mapa
-library(leaflet)
-
+# Crear el mapa usando leaflet, aplicando directamente la función de colores
 madrid_map <- leaflet(data = airbnb_data) %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   addCircleMarkers(
     ~Longitude, ~Latitude,
     radius = 5,
-    color = ~Color,
+    color = ~sapply(Room.Price, get_color),
     fillOpacity = 0.5,
     stroke = FALSE,  # No dibujar bordes alrededor de los círculos
     group = "Airbnb Locations"
@@ -1050,7 +1076,6 @@ madrid_map <- leaflet(data = airbnb_data) %>%
 
 # Imprimir el mapa
 madrid_map
-
 
 ```
 
@@ -1062,12 +1087,6 @@ Para el mapa de calor de correlación, seleccionamos las columnas numéricas rel
 
 ```{r}
 
-# Instalar paquetes si no están instalados
-if (!require("dplyr")) install.packages("dplyr")
-if (!require("corrplot")) install.packages("corrplot")
-
-library(dplyr)
-library(corrplot)
 
 # Seleccionando columnas relevantes para la correlación
 cor_data <- airbnb_data |>
@@ -1087,21 +1106,21 @@ corrplot(cor_matrix, method = "color", type = "upper", order = "hclust",
 ```
 
 ```{r}
-library("ggplot2")
-library("GGally")
 
-airbnb_data2 <- select(airbnb_data, Room.Price, Minimum.nights, Number.of.reviews, Number.of.reviews.per.month, Rooms.rent.by.the.host)
-
-ggpairs(airbnb_data2)
+# Las columnas relevantes para la correlación, están guardadas en la variable cor_data
+ 
+ggpairs(cor_data, 
+        lower = list(continuous = wrap("points", alpha = 0.3,size=0.3  ,color='blue')), 
+        upper = list(continuous = wrap("cor", size=4))
+               )
 ```
+
+## **`Exportación dataset procesado`**
+
+Ahora vamos a generar el dataset procesado:\
 
 ```{r}
 
-if (!require(writexl)) {
-    install.packages("writexl")
-}
-library(writexl)
-# Exportar el dataframe
-write_xlsx(airbnb_data, "dataset_airbnb_procesado.xlsx")
-
+# Exportar el dataframe a CSV con write.csv perteneciente a  'utils' que es un paquete base de R y siempre está cargado.
+write.csv(airbnb_data, "../data/processed/dataset_airbnb_procesado.csv", row.names = FALSE)
 ```
