@@ -845,7 +845,7 @@ walk(graphs, ~ suppressWarnings(print(.x)))
 
 Para analizar los **valores extremos de los atributos categóricos**, hemos utilizado las **frecuencias** de cada uno. Gracias a esto, podemos percibir que **hay muchos barrios de Madrid en los que apenas hay listings**, mientras que aquellos en los que más hay son aquellos que se encuentran cerca de la universidad o cerca del centro. Del mismo modo, podemos ver que las **habitaciones de hotel y las habitaciones compartidas son poco comunes entre los tipos de habitación**. En el resto de variables categóricas no se perciben valores inusualmente extremos.
 
-### `Análisis de Varibles Categóricas`
+### `Análisis Descriptivo`
 
 #### **`1. Neighbourhood`**
 
@@ -1106,9 +1106,7 @@ ggplot(airbnb_data, aes(x = Rooms.rent.by.the.host)) +
 
 -   **Dominio de pequeños operadores:** La mayoría de los hosts probablemente gestionan sus listados a pequeña escala, indicando que Airbnb sigue siendo una plataforma accesible para individuos o familias.
 
-## `EDA: Relación entre variables`
-
-### **`Pregunta1: ¿Cuáles son los distritos más populares en Airbnb?`**
+## `EDA: Análisis Exploratorio de Datos`
 
 #### **Histograma del vecindario en términos de distritos**
 
@@ -1140,17 +1138,13 @@ ggplot(airbnb_data_top10, aes(x = Neighbourhood)) +
 
 ```
 
-\
-\
-**Observaciones del Gráfico:**
+**`¿Cuáles son los distritos más populares en Airbnb?`**
 
 -   **Embajadores** es el distrito con la mayor frecuencia de listados, seguido de **Universidad** y **Palacio**, indicando que estas áreas son probablemente las más demandadas o con más oferta de alojamientos en Airbnb.
 
 -   A partir de **Sol** en adelante, la frecuencia de los listados comienza a disminuir progresivamente.
 
 -   Los distritos como **Goya** y **Puerta del Angel** muestran las menores frecuencias dentro de este top 10, lo que podría sugerir una menor popularidad o una oferta más limitada de alojamientos en estas áreas comparado con distritos como Embajadores o Universidad.
-
-### **`Pregunta2: ¿Existe una correlación entre los precios de las habitaciones y el número de reseñas que reciben, indicando la popularidad o la percepción de valor por parte de los usuarios?`**
 
 ### **`Distribución de precio vs número de reseñas`**
 
@@ -1164,7 +1158,7 @@ labs(title = "Distribución de Precio vs Número de Reseñas", x = "Precio de la
 
 ```
 
-#### **Observaciones del Gráfico:**
+**`¿Existe una correlación entre los precios de las habitaciones y el número de reseñas que reciben, indicando la popularidad o la percepción de valor por parte de los usuarios?`**
 
 1.  **Predominio de precios bajos y reseñas moderadas**: La mayoría de los listados tienen precios inferiores a 1,000 euros y menos de 200 reseñas, indicando que las propiedades más asequibles son comunes pero no acumulan muchas reseñas.
 
@@ -1173,8 +1167,6 @@ labs(title = "Distribución de Precio vs Número de Reseñas", x = "Precio de la
 3.  **Picos de popularidad a precios accesibles**: Un número significativo de reseñas se observa en propiedades con precios razonables, lo que indica que ciertas propiedades a precios moderados son muy populares.
 
 En resumen, no existe una correlación clara entre precios altos y un mayor número de reseñas, implicando que otros factores como ubicación y calidad podrían influir más en la popularidad.
-
-### **`Pregunta3: ¿Cómo varían los precios promedios de las diferentes tipos de habitaciones en Airbnb, y qué tipo de habitación tiene el precio promedio más alto en Madrid?`**
 
 ### **Precio promedio vs tipo de habitación**
 
@@ -1191,7 +1183,7 @@ ggplot(airbnb_data, aes(x = Room.type, y = Room.Price)) +
 
 ```
 
-**`Observaciones del Gráfico:`**
+**`¿Cómo varían los precios promedios de las diferentes tipos de habitaciones en Airbnb, y qué tipo de habitación tiene el precio promedio más alto en Madrid?`**
 
 -   **Casa o Apartamento Completo**: Este tipo de alojamiento tiene el precio promedio más alto, considerablemente más alto que los otros tipos, lo que indica que alquilar una propiedad completa es generalmente más costoso.
 
@@ -1201,9 +1193,7 @@ ggplot(airbnb_data, aes(x = Room.type, y = Room.Price)) +
 
 -   **Habitación Compartida**: Es la opción más económica, con el precio promedio más bajo entre los tipos de habitaciones mostrados.
 
-### **`Pregunta4: ¿Cómo se distribuyen los diferentes tipos de habitaciones en los distintos distritos de Madrid y qué distritos presentan una mayor diversidad de opciones de alojamiento?`**
-
-### Tipo de propiedad y áreas (distritos) - Top10
+### Top 10 - Tipo de propiedad y áreas (distritos)
 
 ```{r}
 library(dplyr)
@@ -1233,7 +1223,7 @@ ggplot(data = filtered_data, aes(x = Neighbourhood, fill = `Room.type`)) +
 # 
 ```
 
-**`Observaciones del Gráfico:`**
+**`¿Cómo se distribuyen los diferentes tipos de habitaciones en el top 10 de distritos de Madrid y qué distritos presentan una mayor diversidad de opciones de alojamiento?`**
 
 **Diversidad de Habitaciones:**
 
@@ -1247,9 +1237,7 @@ ggplot(data = filtered_data, aes(x = Neighbourhood, fill = `Room.type`)) +
 
 -   **Menor Diversidad**: Distritos como Tetuán, Triángulo del Arte, Chamberí, y Puerta del Ángel tienen menos opciones y se enfocan más en apartamentos enteros y habitaciones privadas, con limitadas ofertas de habitaciones de hotel o compartidas.
 
-### **`Pregunta5: ¿Cómo varían los precios de los alojamientos de Airbnb entre diferentes distritos de Madrid y cuáles presentan la mayor variabilidad en sus precios?`**
-
-### **`Distribución de precios vs distrito- Top 10`** 
+### **`Top 10 - Distribución de precios vs distrito`** 
 
 ```{r}
 library(dplyr)
@@ -1280,13 +1268,11 @@ ggplot(data = filtered_data, aes(x = Neighbourhood, y = Room.Price)) +
 
 ```
 
-**`Observaciones del Gráfico:`**
+**`¿Cómo varían los precios de los alojamientos de Airbnb entre diferentes distritos del top10 de Madrid y cuáles presentan la mayor variabilidad en sus precios?`**
 
 -   **Distritos con Mayor Variabilidad**: Distritos como Embajadores, Universidad, y Palacio muestran una amplia variabilidad en precios, con numerosos valores atípicos que indican precios extremadamente altos comparados con la mediana.
 
 -   **Distritos con Menor Variabilidad**: Distritos como Justicia, Cortes, y Puerta del Ángel parecen tener una variabilidad más contenida, con menos valores atípicos y cajas más estrechas, lo que sugiere precios más consistentes y predecibles. 
-
-### **`Pregunta6: ¿Cómo se distribuyen geográficamente los listados de Airbnb en Madrid y qué áreas muestran mayor concentración de alojamientos?`**
 
 ### **`Gráfico de Distribución en Madrid`**
 
@@ -1314,7 +1300,7 @@ madrid_map
 
 ```
 
-**`Observaciones del Gráfico:`**
+**`¿Cómo se distribuyen geográficamente los listados de Airbnb en Madrid y qué áreas muestran mayor concentración de alojamientos?`**
 
 -   **Alta Concentración en el Centro**: La mayor densidad de listados de Airbnb se observa en el centro de Madrid. Las áreas alrededor del centro de la ciudad, particularmente barrios como Sol, Gran Vía, y La Latina, muestran los puntos más calientes en rojo intenso, indicando una concentración muy alta de alojamientos.
 
@@ -1358,9 +1344,7 @@ madrid_map
 
 -   **Zonas Rojas (Precios Altos)**: Las áreas con alojamientos de precios altos (más de 100 €) están altamente concentradas en el centro de Madrid, especialmente en barrios céntricos y turísticos. Estas zonas rojas destacan en el corazón de la ciudad, donde se localizan muchas de las principales atracciones y servicios.
 
-### **`Pregunta: ¿Qué variables están más fuertemente correlacionadas con el precio de los alojamientos en Airbnb?`**
-
-### Mapa de Calor de Correlación
+### **Mapa de Calor de Correlación**
 
 ```{r}
 
@@ -1382,7 +1366,7 @@ corrplot(cor_matrix, method = "color", type = "upper", order = "hclust",
 
 ```
 
-**Correlación entre "Room.Price" y otras variables**:
+**`¿Qué variables están más fuertemente correlacionadas con el precio de los alojamientos en Airbnb?`**
 
 -   **"Rooms.rent.by.the.host"**: Esta variable muestra una correlación negativa con "Room.Price", indicada por el tono azul oscuro en el gráfico. Esto sugiere que cuanto más habitaciones alquila un host, podría haber una tendencia a precios más bajos por habitación.
 
@@ -1390,7 +1374,7 @@ corrplot(cor_matrix, method = "color", type = "upper", order = "hclust",
 
 -   **"Minimum.nights"**: La correlación entre "Minimum.nights" y "Room.Price" también es baja, lo que indica que la cantidad mínima de noches requeridas no es un factor significativo en el precio de los alojamientos.
 
-**Matriz de Dispersión y Correlación de Variables**
+### **`Matriz de Dispersión y Correlación de Variables`**
 
 ```{r}
 
@@ -1432,7 +1416,11 @@ Basado en nuestro análisis exploratorio, estos son nuestros KPIs elegidos:
 
 ## **`Exportación dataset procesado`**
 
-Ahora vamos a generar el dataset procesado:\
+```{r}
+rmarkdown::render("cuaderno.qmd", output_format = "html_document", output_file = "../docs/index.html")
+```
+
+Ahora vamos a generar el dataset procesado:
 
 ```{r}
 
