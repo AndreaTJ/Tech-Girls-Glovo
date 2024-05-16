@@ -1417,7 +1417,7 @@ Basado en nuestro análisis exploratorio, estos son nuestros KPIs elegidos:
 ## **`Exportación dataset procesado`**
 
 ```{r}
-rmarkdown::render("cuaderno.qmd", output_format = "html_document", output_file = "../docs/index.html")
+rmarkdown::render("cuaderno.qmd", output_format = "pdf_document", output_file = "analisis_exploratorio")
 ```
 
 Ahora vamos a generar el dataset procesado:
