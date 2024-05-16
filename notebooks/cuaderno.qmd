@@ -241,7 +241,7 @@ summary(airbnb_data[, c("City", "Country")])
 
 ### `Neighbourhood`
 
-Hemos notado que en los barrios, parecen haber barrios que no pertenecen a Madrid. Vamos a verlo: 
+Hemos notado que en los barrios, parecen haber barrios que no pertenecen a Madrid. Vamos a verlo:
 
 ```{r}
 # Revisamos las frecuencias de cada barrio
@@ -252,8 +252,8 @@ zero_freq_neighbourhoods <- table_neighbourhoods[table_neighbourhoods == 0]
 print(zero_freq_neighbourhoods)
 
 ```
-Vemos que hay 0 alojamientos en Madrid, para esos barrios, porque no son barrios madrileños. 
-Eliminamos esos niveles. 
+
+Vemos que hay 0 alojamientos en Madrid, para esos barrios, porque no son barrios madrileños. Eliminamos esos niveles.
 
 ```{r}
 
@@ -261,13 +261,13 @@ Eliminamos esos niveles.
 airbnb_data$Neighbourhood <- droplevels(airbnb_data$Neighbourhood)
 ```
 
-Ahora podemos comprobar, que esos niveles se ha removido: 
+Ahora podemos comprobar, que esos niveles se ha removido:
+
 ```{r}
 # Verificar nuevamente las frecuencias para confirmar que los niveles cero han sido eliminados
 table(airbnb_data$Neighbourhood)
 
 ```
-
 
 ### `Availibility`
 
@@ -600,6 +600,13 @@ summary(airbnb_data$Time_category)
 
 ```
 
+Una vez categorizada **`time_since_last_review`** , ya no es necesaria para los siguientes pasos, porque usaremos **`Time_category`**, en su lugar; así que la eliminamos:
+
+```{r}
+#Eliminar time_since_last_review
+airbnb_data <- select(airbnb_data, -time_since_last_review)
+```
+
 #### **`Availibility`**
 
 ```{r}
@@ -613,7 +620,14 @@ Los ceros de **`Availibility`**, se han tratado en la columna **`Availibility_Ca
 paste("Total suma de filas con 'No disponible' en la columna Availability_Cat es:", sum(airbnb_data$Availability_Cat == "No disponible"))
 ```
 
-Vemos que el recuento de "No disponible" en **`Availibility_Cat`**, coincide con el recuento de ceros en **`Availibility.`**
+Vemos que el recuento de "No disponible" en **`Availibility_Cat`**, coincide con el recuento de ceros en `Availibility.`
+
+Una vez categorizada **`Availibility`**, y comprobando que el tratamiento de ceros, se ha realizado correctamente, ya no es necesaria para los siguientes pasos. Usaremos **`Availibility_Cat`**, en su lugar, así que la eliminamos:
+
+```{r}
+#Eliminar Availibility
+airbnb_data <- select(airbnb_data, -Availibility)
+```
 
 ## **`Comprobación de Duplicados`**
 
@@ -630,7 +644,7 @@ if (nrow(filas_duplicadas) == 0) {
 
 Utilizamos **`duplicated()`** para crear un vector que identifica filas repetidas en **`airbnb_data`**, almacenando dichas filas en **`filas_duplicadas`**. Luego, contamos cuantas filas hay en `filas_duplicadas`, con `nrow()`.
 
-Vemos que no hay filas duplicadas. 
+Vemos que no hay filas duplicadas.
 
 ## `Resumen cambios en las variables.`
 
@@ -961,7 +975,7 @@ library(tidyr)  # Para pivotar el dataframe
 
 # Filtrar sólo columnas numéricas
 numeric_data <- airbnb_data %>% 
-  select(Room.ID, Host.ID, Room.Price, Minimum.nights, Number.of.reviews, Number.of.reviews.per.month, Rooms.rent.by.the.host, Availibility)
+  select(Room.ID, Host.ID, Room.Price, Minimum.nights, Number.of.reviews, Number.of.reviews.per.month, Rooms.rent.by.the.host)
 
 # Calcular y mostrar el porcentaje de outliers para cada columna numérica
 outliers_summary <- numeric_data %>% 
@@ -1236,11 +1250,7 @@ Ahora vamos a generar el dataset procesado:\
 
 ```{r}
 
-# Exportar el dataframe a CSV con write.csv perteneciente a  'utils' que es un paquete base de R y siempre está cargado.
-write.csv(airbnb_data, "../data/processed/dataset_airbnb_procesado.csv", row.names = FALSE)
-```
-
-```{r}
-rmarkdown::render("cuaderno.qmd", output_format = "html_document", output_file = "output.html")
+# Exportar el dataframe procesado a CSV 
+write.csv2(airbnb_data, "../data/processed/processed-air-bnb-listings.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
 ```
