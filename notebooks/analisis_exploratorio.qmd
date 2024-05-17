@@ -1,0 +1,1430 @@
+---
+title: "cuaderno"
+format: html
+editor: visual
+---
+
+# Análisis Exploratorio de Dataset de Airbnb (Madrid-España)
+
+Este análisis explora un conjunto de datos de Airbnb, específicamente centrado en las listas de alojamientos disponibles en Madrid, España. Los datos han sido descargados desde el portal público OpenDataSoft. Se puede acceder directamente al dataset utilizado a través del siguiente enlace: [Airbnb Listings en OpenDataSoft](https://public.opendatasoft.com/explore/dataset/air-bnb-listings/table/?disjunctive.neighbourhood&disjunctive.column_10&disjunctive.city&q=Madrid&location=7,40.5931,-4.422&basemap=jawg.light).
+
+## **`Instalacion y Carga de Pre-requerimientos`**
+
+Previo al análisis, vamos a instalar y cargar los paquetes necesarios:
+
+```{r}
+# Silas librerias no están ya instaladas , las instala. 
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("corrplot")) install.packages("corrplot")
+if (!require("ggmap")) install.packages("ggmap")
+if (!require("leaflet")) install.packages("leaflet")
+if (!require("leaflet.extras")) install.packages("leaflet.extras")
+if (!require("GGally")) install.packages("GGally")
+if (!require("visdat")) install.packages("visdat")
+if (!require("naniar")) install.packages("naniar")
+
+```
+
+```{r}
+# Cargar las librerías
+library(tidyverse)
+library(corrplot)
+library(ggmap)
+library(leaflet)
+library(leaflet.extras)
+library(GGally)
+library(visdat)
+library(naniar)
+
+```
+
+### **`Descripción de Librerías de R que hemos utilizado:`**
+
+**`Tidyverse:`** La librería tidyverse carga en R un conjunto de paquetes que comparten una filosofía común de manipulación y visualización de datos, incluyendo dplyr, ggplot2 y otros paquetes que facilitan el flujo de trabajo de análisis de datos en R.
+
+**`Dplyr:`** Proporciona un conjunto de funciones para realizar operaciones de manipulación de datos como filtrado, selección, agregación y unión de datos.
+
+**`Ggplot2:`** Permite crear una amplia variedad de gráficos de alta calidad de forma sencilla y flexible.
+
+**`Corrplot`**: Se utiliza para visualizar matrices de correlación de datos de una manera clara y concisa, lo que facilita la identificación de patrones de correlación entre variables.
+
+**`Ggmap:`** Esta librería se utiliza para visualizar datos espaciales en mapas utilizando ggplot2. Permite superponer datos sobre mapas de Google Maps, OpenStreetMap y otros proveedores de mapas.
+
+**`Leaflet:`** Es una librería para la creación de mapas interactivos en R. Permite crear mapas interactivos con características como marcadores, polígonos, superposiciones y herramientas de zoom.
+
+**`Leaflet.extras:`** Extiende las funcionalidades de la librería leaflet proporcionando características adicionales para la creación de mapas interactivos más avanzados.
+
+**`GGally:`** Proporciona extensiones para ggplot2, permitiendo crear gráficos de matriz y otras visualizaciones complejas de forma más sencilla.
+
+**`Visdat`** es una librería que proporciona herramientas para visualizar la estructura de los datos. Su objetivo principal es ayudar a comprender la distribución y la integridad de los datos, incluidos los datos faltantes, ayudando a guiar las decisiones sobre la limpieza y el preprocesamiento de los datos.
+
+**`Naniar`** es una librería que se centra específicamente en el manejo y la visualización de datos faltantes. es especialmente útil cuando se trabaja con conjuntos de datos que contienen muchos valores faltantes o cuando se necesita realizar análisis sensibles a la presencia de datos faltantes, como modelos predictivos o análisis de datos longitudinales.
+
+## **`Carga de datos para el análisis.`**
+
+Leemos el dataset desde su ubicación y especificamos que el separador de campos es un punto y coma.
+
+```{r}
+library(tidyverse)
+
+# Leer el archivo CSV
+airbnb_data_raw <- read.csv("../data/raw/air-bnb-listings.csv", sep = ';')
+
+```
+
+Mostramos las primeras filas del dataset, para comprobar que los datos se han cargado correctamente.
+
+```{r}
+# Ver las primeras filas de los datos
+head(airbnb_data_raw)
+
+```
+
+Calculamos y mostramos las dimensiones originales del dataset, obteniendo el número de filas y columnas.
+
+```{r}
+dimension_original <- dim(airbnb_data_raw)
+
+paste('El numero de filas que tiene el dataframe airbnb_data es:', dimension_original[1])
+paste('El numero de columnas que tiene el dataframe airbnb_data es:', dimension_original[2])
+```
+
+El dataset original, tiene `17 variables(columnas)` y `21278 observaciones(filas).`
+
+Examinamos que tipo de variables tenemos.
+
+```{r}
+str(airbnb_data_raw)
+```
+
+Vemos que tenemos variables categóricas como `Room.type, Neighbourhood, City y Country` que no se están tomando como tal, sino como `character`. Lo mismo sucede con las fechas.
+
+Para tener más visibilidad del tipo y clase de dato que tiene cada columna, creamos un DataFrame que muestre la informacion sobre la clase y el tipo de datos de cada variable.
+
+```{r}
+
+# Función para obtener las clases y tipos de las columnas de un dataframe
+obtener_clase_tipo <- function(data) {
+  # Crear un vector con los nombres de las columnas
+  column_names <- colnames(data)
+
+  # Obtener la clase y el tipo de cada columna utilizando sapply
+  column_classes <- sapply(data, class)
+  column_types <- sapply(data, typeof)
+
+  # Crear el dataframe con la información recopilada de Clase y Tipo
+  clase_tipo <- data.frame(
+    Class = column_classes,     # Clase de cada columna
+    Type = column_types         # Tipo de cada columna
+  )
+  
+  # Devolver el dataframe
+  return(clase_tipo)
+}
+
+# Usar la función con el dataframe airbnb_data
+resultado_clase_tipo <- obtener_clase_tipo(airbnb_data_raw)
+print(resultado_clase_tipo)
+
+
+
+```
+
+Con esta información, vamos a proceder a hacer las conversiones necesarias:
+
+## `Conversión de variables`
+
+Para asegurar la integridad del dataframe original mientras realizamos cambios, primero crearemos una copia del mismo. Todas las modificaciones y análisis se realizarán en esta copia, denominada **`airbnb_data`**.
+
+```{r}
+airbnb_data <- data.frame(airbnb_data_raw)
+
+```
+
+Como hemos visto arriba, hay columnas que deberían ser de diferente clase.
+
+```{r}
+str(airbnb_data[, c("Date.last.review", "Updated.Date", "Room.type", "Neighbourhood", "City", "Country")])
+```
+
+**`Data.last.review y Update.Date`.**
+
+**Deberían ser fecha:** Ya que ambas variables permiten cálculos como la diferencia de días entre eventos, agrupación por períodos de tiempo (por ejemplo, mes, año), y correlacionar eventos o cambios con fechas específicas, lo cual sería difícil si estas variables fueran tratadas de otra manera (como character por ejemplo).
+
+**`Room.type, Neighbourhood, City y Country`**
+
+**Deberían ser categóricas:** Ya que agrupan los datos usando etiquetas textuales y facilitan análisis por segmentos. Además, no representan cantidades ni establecen un orden, características típicas de las variables categóricas.
+
+### `Data.last.review y Update.Date`
+
+Convertimos ambas columnas a fechas:
+
+```{r}
+
+# Convertir la columna Date.last.review a tipo fecha
+airbnb_data$Date.last.review <- as.Date(airbnb_data$Date.last.review, format = "%Y-%m-%d")
+
+# Convertir la columna Updated.Date a tipo fecha
+airbnb_data$Updated.Date <- as.Date(airbnb_data$Updated.Date, format = "%Y-%m-%d")
+
+```
+
+Comprobamos que se ha realizado con éxito el cambio:
+
+```{r}
+str(airbnb_data[, c("Date.last.review", "Updated.Date")])
+
+```
+
+Como podemos comprobar arriba, el cambio se hizo correctamente. `Data.last.review y Update.Date` son ahora fechas.
+
+### `Room.type, Neighbourhood, City y Country`
+
+Convertimos estas variables en categóricas.
+
+```{r}
+
+# Convertir columnas a factores (categóricas)
+airbnb_data$Room.type <- as.factor(airbnb_data$Room.type)
+airbnb_data$Neighbourhood <- as.factor(airbnb_data$Neighbourhood)
+airbnb_data$City <- as.factor(airbnb_data$City)
+airbnb_data$Country <- as.factor(airbnb_data$Country)
+```
+
+Nos aseguramos que los cambios se han hecho bien:
+
+```{r}
+
+summary(airbnb_data[, c("Room.type", "Neighbourhood", "City", "Country")])
+
+```
+
+Con la información de arriba, comprobamos que efectivamente que `Room.type, Neighbourhood, City y Country` son ahora variables catégoricas.
+
+### `City y Country`
+
+Podemos notar que en `City y Country`, hay algo que llama la atención. Se incluyen otras ciudades y países que no deberían estar.
+
+```{r}
+summary(airbnb_data[, c("City", "Country")])
+```
+
+Vemos que no todos los registros que pertenecen a España, son de Madrid.
+
+Hacemos un filtrado en el que solo mantenemos las filas donde el valor de la columna `City es Madrid.`
+
+```{r}
+
+# Filtrar el dataset para mantener solo las filas donde la ciudad es Madrid
+airbnb_data <- airbnb_data |> filter(City == "Madrid")
+
+
+```
+
+Una vez hecho el filtro, verificamos que en `City`, no aparezca nada que no sea `Madrid`.
+
+```{r}
+# Verificar que sólo quedan entradas de Madrid en el dataset original
+summary(airbnb_data[, c("City", "Country")])
+```
+
+La información de arriba, es lo que esperabamos, solo quedan los registros de Madrid.\
+Sin embargo siguen apareciendo otros niveles tanto en `City y Country`. Ya no los necesitamos, así los vamos a eliminar.
+
+```{r}
+airbnb_data$City <- droplevels(airbnb_data$City)
+airbnb_data$Country <- droplevels(airbnb_data$Country)
+
+#Verificamos que solo queden los niveles deseados en City y Country
+summary(airbnb_data[, c("City", "Country")])
+```
+
+### `Neighbourhood`
+
+Hemos notado que en los barrios, parecen haber barrios que no pertenecen a Madrid. Vamos a verlo:
+
+```{r}
+# Revisamos las frecuencias de cada barrio
+table_neighbourhoods <- table(airbnb_data$Neighbourhood)
+
+# Mostrar los barrios con frecuencia cero
+zero_freq_neighbourhoods <- table_neighbourhoods[table_neighbourhoods == 0]
+print(zero_freq_neighbourhoods)
+
+```
+
+Vemos que hay 0 alojamientos en Madrid, para esos barrios, porque no son barrios madrileños. Eliminamos esos niveles.
+
+```{r}
+
+# Eliminar esos niveles del factor
+airbnb_data$Neighbourhood <- droplevels(airbnb_data$Neighbourhood)
+```
+
+Ahora podemos comprobar, que esos niveles se ha removido:
+
+```{r}
+# Verificar nuevamente las frecuencias para confirmar que los niveles cero han sido eliminados
+table(airbnb_data$Neighbourhood)
+
+```
+
+### `Availibility`
+
+Transformamos la columna **`Availibility`** en una variable categórica, definiendo rangos específicos que representan distintos niveles de disponibilidad.\
+\
+Esta categorización nos permite analizar y visualizar la información de forma más eficiente.
+
+```{r}
+
+# Rangos de disponibilidad y sus etiquetas
+breaks <- c(-1, 0, 30, 60, 90, 180, 365)
+labels <- c("No disponible", "Hasta 30 días", "31 a 60 días", "61 a 90 días", "91 a 180 días", "181 a 365 días")
+
+# Categorizar 'Availability' usando cut()
+airbnb_data$Availability_Cat <- cut(airbnb_data$Availibility, breaks = breaks, labels = labels, include.lowest = TRUE)
+
+
+airbnb_data$Availability_Cat<- as.factor(airbnb_data$Availability_Cat)
+
+```
+
+Realizamos una revisión de la nueva columna para asegurarnos de que la asignación de categorías se hizo correctamente
+
+```{r}
+summary(airbnb_data$Availability_Cat)
+
+```
+
+### `Coordinates`
+
+La columna **`Coordinates`** contiene pares de valores separados por comas que representan la latitud y longitud geográfica
+
+```{r}
+head(airbnb_data$Coordinates)
+```
+
+Dividimos **`Coordinates`** en dos columnas, Latitude y Longitude que representan las coordenadas geográficas.
+
+```{r}
+# Asegurándonos de que la columna Coordinates está en formato de string
+airbnb_data$Coordinates <- as.character(airbnb_data$Coordinates)
+
+# Separar la columna Coordinates en dos nuevas columnas: Latitude y Longitude
+airbnb_data<- airbnb_data |>
+  separate(Coordinates, into = c("Latitude", "Longitude"), sep = ",", convert = TRUE)
+
+
+```
+
+Nos aseguramos de que el cambio se ha hecho efectivo:
+
+```{r}
+str(airbnb_data[, c("Latitude", "Longitude")])
+```
+
+Como podemos comprobar, ahora la columna **`Coordinates`** se ha convertido en 2: `Latitude y Longitude`
+
+### Location
+
+Parece que la columna `Location` es la combinación de `Country, City, y Neighbourhood`. Vamos a probarlo:
+
+```{r}
+
+#Crea una nueva columna temporal llamada Combined que combina Country,City y Neighbourhood, separados por ",". 
+
+airbnb_data <- airbnb_data |> mutate(Combined = paste(Country, City, Neighbourhood, sep = ", "))
+
+#Compara la columna Location con la columna Combined para verificar si son iguales.
+
+airbnb_data <- airbnb_data |> mutate(Location_Match = Location == Combined)
+
+
+#Revisa cuántos y qué porcentaje de las filas tienen coincidencia exacta entre Location y la columna Combined
+
+table(airbnb_data$Location_Match) #Cuenta solo lo que es TRUE
+
+```
+
+Comparamos la columna `Location` con la combinación de `Country, City, y Neighbourhood` y podemos ver que son iguales.`Location` es, por tanto, redundante; por lo que se puede eliminar.
+
+También elimaremos las columnas temporales que creamos para llegar a esta conclusión`Location_Match y Combined:`
+
+```{r}
+#Eliminar Location, Location_Match y Combined
+airbnb_data <- select(airbnb_data, -Location)
+airbnb_data <- select(airbnb_data, -Location_Match)
+airbnb_data <- select(airbnb_data, -Combined)
+```
+
+## `Estudio de los valores nulos y ceros.`
+
+Creamos un dataframe solo con las columnas que tienen nulos o ceros
+
+```{r}
+# Dataframe con la contabilización de Nulos y Ceros
+resultados <- data.frame(
+  NA_Count = colSums(is.na(airbnb_data)),
+  Zero_Count = colSums(airbnb_data == 0, na.rm = TRUE)
+)
+
+# Filtrar y mostrar solo las filas con NA o ceros
+resultados_con_NA_o_ceros <- resultados[apply(resultados, 1, function(x) any(x > 0)), ]
+print(resultados_con_NA_o_ceros)
+```
+
+Abajo, podemos ver un gráfico que ilustra claramente todas las atributos que tienen valores nulos. Enseñandonos su porcentaje con respecto al total de datos.
+
+Solo `Date.last.review` y `Number.of.reviews.per.month` tienen valores nulos, que representan alrededor del 25% de sus datos. El resto de atributos, no presentan valores nulos.
+
+```{r}
+library(visdat)
+library(naniar)
+vis_miss(airbnb_data, sort_miss = TRUE)
+```
+
+### `Tratamiento de los valores nulos y ceros.`
+
+#### `Room.Price`
+
+```{r}
+paste("Total suma de filas de Room.Price con ceros:", sum(airbnb_data$Room.Price == 0))
+
+```
+
+Eliminamos el registro con `Room.Price` de cero porque probablemente es un error de entrada, ya que es poco probable que una habitación de hotel tenga un coste cero. Este error podría distorsionar nuestro análisis estadístico y posterior modelo predictivo. Eliminando este dato, aseguramos la calidad y consistencia del dataset.
+
+#### `Number.of.reviews`, `Date.last.review` y `Number.of.reviews.per.month.`
+
+Vemos que existe la misma cantidad de ceros en `Number.of.reviews`, que nulos en `Date.last.review` y `Number.of.reviews.per.month.`
+
+¿Están relacionados estos tres valores?
+
+Vamos a verlo:
+
+```{r}
+
+# Añadir una columna temporal para verificar la condición
+airbnb_data <- airbnb_data |>
+  mutate(
+    check = Number.of.reviews == 0 & is.na(Date.last.review) & is.na(Number.of.reviews.per.month)
+  )
+
+# Sumar para comprobar la condición basada en Number.of.reviews
+result <- airbnb_data |>
+  filter(Number.of.reviews == 0) |>
+  summarise(
+    Total_Zero_Reviews = n(),
+    Correct_Cases = sum(check)
+  )
+
+print(result)
+
+
+
+```
+
+Creamos una columna llamada `check`. Esta columna nos ayuda a ver si el `número de reseñas =  0` y, al mismo tiempo, si las `fechas de la última reseña y el promedio de reseñas por mes están vacíos`. Si se cumplen estas condiciones, la columna indica **True**; si no, muestra **False**.
+
+Comparamos, la columna `check` con la cuenta de los registros donde el número de reseñas es cero.
+
+Este paso nos permite comprobar si nuestra teoría sobre la relación entre estas variables se sostiene.
+
+**Y si, tiene sentido, ya que si un alojamiento no ha recibido reseñas, no podría tener una fecha de última reseña ni un promedio de reseñas mensuales**.
+
+Ahora elimaremos la columna temporal `check.`
+
+```{r}
+#Eliminar check
+airbnb_data <- select(airbnb_data, -check)
+```
+
+##### `Categorización de Number.of.reviews` y `Number.of.reviews.per.month`
+
+Vamos a categorizar `Number.of.reviews` y `Number.of.reviews.per.month`para un mejor análisis
+
+Empezamos colocando ceros en los valores nulos de `Number.of.reviews.per.month, para`asegurarmos podamos operar sobre esta columna, más adelante.
+
+```{r}
+sum(is.na(airbnb_data$Number.of.reviews.per.month))
+```
+
+Tenemos `5400 registros vacíos` de `Number.of.reviews.per.month.`
+
+Sustituimos NA por el valor cero.
+
+```{r}
+# Sustituir directamente los NA por 0 en la columna específica
+airbnb_data$Number.of.reviews.per.month[is.na(airbnb_data$Number.of.reviews.per.month)] <- 0
+```
+
+```{r}
+
+#Calculo el total de filas con NA 
+paste("Total suma de filas NA:", sum(is.na(airbnb_data$Number.of.reviews.per.month)))
+
+#Calculo el total de filas con ceros 
+paste("Total suma de filas con ceros:", sum(airbnb_data$Number.of.reviews.per.month == 0))
+
+
+```
+
+Como podemos comprobar, el cambio se ha hecho correctamente. Los `5400 registros vacíos` de `Number.of.reviews.per.month` ahora contienen ceros.
+
+\
+Ahora categorizamos la variable:
+
+```{r}
+airbnb_data <- airbnb_data |> 
+  mutate(
+    Review_category = factor(
+      cut(
+        Number.of.reviews.per.month,
+        breaks = c(-Inf, 0, 1, 5, Inf),  # Incluyendo  la categoría de "sin reseñas" en los breaks
+        labels = c('sin reseñas', '0-1/mes', '1-5/mes', '+5/mes'),
+        include.lowest = TRUE,
+        right = TRUE
+      )
+    )
+  )
+
+
+summary(airbnb_data$Review_category)
+
+#NOTA: 
+#El intervalo sin reseñas, incluye todos los nulos
+#El intervalo 0-1/mes, incluye los valores desde 0.01 reviews.per.month a 1 (incluido)
+#El intervalo 1-5/mes, incluye los valores desde 1,01 reviews.per.month a 5 (incluido) y asi sucesivamente 
+```
+
+Si el valor es cero, lo categorizamos como "sin reseñas". Luego, los valores se dividen en los siguientes rangos: 0-1/mes, 1-5/mes, +5/mes. Finalmente, creamos una nueva variable llamada **`Review_category`** que contiene estas categorías.
+
+Ahora categorizamos la variable `Number.of.reviews`:
+
+```{r}
+airbnb_data <- airbnb_data |> 
+  mutate(
+    Review_Count_Category = factor(
+      cut(
+        Number.of.reviews,
+        breaks = c(-Inf, 0, 1, 10, 50, 100, Inf),  # Incluyendo la condición de 0 reseñas directamente en los breaks
+        labels = c('sin reseñas', '1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '+ 101 reseñas'),
+        include.lowest = TRUE,
+        right = TRUE
+      ),
+      levels = c('sin reseñas', '1 reseña', '2-10 reseñas', '11-50 reseñas', '51-100 reseñas', '+ 101 reseñas')
+    )
+  )
+
+# Puedes verificar el resultado con:
+summary(airbnb_data$Review_Count_Category)
+
+
+#NOTA: 
+#El intervalo sin reseñas, incluye todos los ceros
+#El intervalo1 reseña, incluye solos los valor 1 
+#El intervalo '2-10 reseñas', incluye los valores desde 2 a 10 (incluido)
+#El intervalo '11-50 reseñas', incluye los valores desde 11 a 50 (incluido) y asi sucesivamente 
+
+
+```
+
+Si hay cero reseñas, se etiqueta como "sin reseñas". De lo contrario, se divide en varios rangos, como 1 reseña, 2-10 reseñas, 11-50 reseñas, etc. Luego, se crea una nueva variable llamada **`Review_Count_Category`** con estas categorías.
+
+#### `Date.last.review`
+
+Es fundamental considerar la actualidad de la información y su influencia en los análisis y decisiones basadas en estos datos. Vamos a calcular la cantidad de días transcurridos desde la última review hasta la `fecha de extracción de los datos*.`
+
+`*La fecha de extracción, ha sido obtenida directamente del apartado de "Information" del dataset: Information Airbnb Listings en OpenDataSoft.`
+
+```{r}
+
+# Calcular el número de días desde la última revisión hasta la fecha de extracción
+#La fecha del ultimo scrapping fue
+date_scraped <- as.Date("2020-08-07")
+
+#Calculamos la diferencia entre ambas fechas
+airbnb_data$time_since_last_review <- as.numeric(difftime(date_scraped, airbnb_data$Date.last.review, units = "days"))
+```
+
+Se calcula el tiempo transcurrido en días desde la fecha de extracción de datos, representada por "2020-08-07", hasta la fecha de la última reseña. La diferencia se almacena en una nueva columna llamada **`time_since_last_review`**
+
+Ahora veamos la distribución de los datos en **`time_since_last_review`**
+
+```{r}
+# Histograma del tiempo transcurrido desde la última reseña
+ggplot(airbnb_data, aes(x = time_since_last_review)) +
+  geom_histogram(bins = 30, fill = "#69b3a2", color = "#e9ecef") + # Colores personalizados para las barras
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Helvetica", size = 12), # Cambia la fuente y el tamaño del texto
+    plot.title = element_text(face = "bold", hjust = 0.5), # Negrita y centrado para el título
+    plot.subtitle = element_text(face = "italic", hjust = 0.5), # Subtítulo en cursiva y centrado
+    axis.title = element_text(face = "bold", size = 13) # Títulos de los ejes en negrita y tamaño aumentado
+  ) +
+  labs(
+    title = "Distribución de días desde la última reseña",
+    subtitle = "Visualización de la frecuencia de días transcurridos",
+    x = "Días desde la última reseña", y = "Frecuencia"
+  )
+```
+
+Para poder realizar un mejor análisis de los datos, vamos a categorizar las nueva columna: **`time_since_last_review`**
+
+```{r}
+airbnb_data <- airbnb_data |>
+  mutate(
+    Time_category = factor(
+      if_else(
+        is.na(time_since_last_review),
+        'sin reseñas',  # Asignar directamente 'sin reseñas' si el valor es NA
+        cut(  # Usar cut solo en valores no-NA
+          time_since_last_review,
+          breaks = c(0, 60, 182, 365, Inf),  # Definiendo los rangos
+          labels = c('hasta 8 semanas', '8 semanas - 6 meses', '6-12 meses', '1+ año'),
+          include.lowest = TRUE,
+          right = TRUE
+        )
+      ),
+      levels = c('sin reseñas', 'hasta 8 semanas', '8 semanas - 6 meses', '6-12 meses', '1+ año')
+    )
+  )
+
+summary(airbnb_data$Time_category)
+
+#NOTA: 
+#El intervalo sin reseñas, incluye todos los nulos
+#El intervalo hasta 8 semanas, incluye los valores hasta e 60 (incluida)
+#El intervalo 8 semanas - 6 meses, incluye los valores desde 61 a 182 (incluido)  y asi sucesivamente 
+
+```
+
+Una vez categorizada **`time_since_last_review`** , ya no es necesaria para los siguientes pasos, porque usaremos **`Time_category`**, en su lugar; así que la eliminamos:
+
+```{r}
+#Eliminar time_since_last_review
+airbnb_data <- select(airbnb_data, -time_since_last_review)
+```
+
+#### **`Availibility`**
+
+```{r}
+#Calculo el total de filas con ceros 
+paste("Total suma de filas con ceros en la columna Availibility es:", sum(airbnb_data$Availibility == 0))
+```
+
+Los ceros de **`Availibility`**, se han tratado en la columna **`Availibility_Cat`** como alojamientos "No disponibles"
+
+```{r}
+paste("Total suma de filas con 'No disponible' en la columna Availability_Cat es:", sum(airbnb_data$Availability_Cat == "No disponible"))
+```
+
+Vemos que el recuento de "No disponible" en **`Availibility_Cat`**, coincide con el recuento de ceros en `Availibility.`
+
+Una vez categorizada **`Availibility`**, y comprobando que el tratamiento de ceros, se ha realizado correctamente, ya no es necesaria para los siguientes pasos. Usaremos **`Availibility_Cat`**, en su lugar, así que la eliminamos:
+
+```{r}
+#Eliminar Availibility
+airbnb_data <- select(airbnb_data, -Availibility)
+```
+
+## **`Comprobación de Duplicados`**
+
+Veamos sin en nuestro dataset, hay filas duplicadas.
+
+```{r}
+filas_duplicadas <- airbnb_data[duplicated(airbnb_data), ]
+if (nrow(filas_duplicadas) == 0) {
+  print("No hay filas duplicadas en el dataset.")
+} else {
+  print("Se han encontrado filas duplicadas en el dataset.")
+}
+```
+
+Utilizamos **`duplicated()`** para crear un vector que identifica filas repetidas en **`airbnb_data`**, almacenando dichas filas en **`filas_duplicadas`**. Luego, contamos cuantas filas hay en `filas_duplicadas`, con `nrow()`.
+
+Vemos que no hay filas duplicadas.
+
+## `Resumen cambios en las variables.`
+
+Resumen condensado y ajustado de las transformaciones aplicadas:
+
+#### `1. Date.last.review y Updated.Date`
+
+-   Convertidas a formato de fecha (`%Y-%m-%d`).
+-   Calculada la diferencia en días desde la fecha del último scraping (`2020-08-07`) hasta `Date.last.review`. El resultado se almacena en `Time_category` y se categoriza en:
+    -   "sin reseñas" (casos donde la fecha es nula)
+    -   "hasta 8 semanas"
+    -   "8 semanas - 6 meses"
+    -   "6-12 meses"
+    -   "1+ año"
+
+#### `2. Room.type, Neighbourhood, City, Country`
+
+-   Transformadas en variables categóricas (factores) para facilitar análisis por segmentos.
+
+#### `3. Availability`
+
+-   Categorizada en la columna `Availibility_Cat`desde 'No disponible' hasta '181 a 365 días' en rangos que representan distintos niveles de disponibilidad:
+
+    -   "No disponible" (para alojamientos con cero días disponibles)
+    -   "Menos de 30 días"
+    -   "31 a 60 días"
+    -   "61 a 90 días"
+    -   "91 a 180 días"
+    -   "181 a 365 días"
+
+-   Tras categorizar `Availibility` y comprobar que el tratamiento de ceros, en la nueva columna Availibility_Cat era correcto. Availibility se eliminó.
+
+#### `4. City`
+
+-   Filtrados los datos para incluir solo entradas de Madrid.
+
+#### `5. Coordinates`
+
+-   Separada en dos columnas numéricas: `Latitude` y `Longitude`.
+
+#### `6. Location`
+
+-   Eliminada tras confirmar redundancia con `Country`, `City`, y `Neighbourhood`.
+
+#### `7. Number.of.reviews & Number.of.reviews.per.month`
+
+-   Análisis de valores nulos y ceros; categorizados para facilitar análisis:
+    -   **Review_Count_Category** (basado en `Number.of.reviews`):
+
+        -   "sin reseñas"
+        -   "1 reseña"
+        -   "2-10 reseñas"
+        -   "11-50 reseñas"
+        -   "51-100 reseñas"
+        -   "+ 101 reseñas"
+
+    -   **Review_category** (basado en `Number.of.reviews.per.month`):
+
+        -   "sin reseñas" (incluye registros nulos y ceros)
+        -   "0-1/mes"
+        -   "1-5/mes"
+        -   "+5/mes"
+
+### `8. Neighbourhood`
+
+-   Filtrados los datos para incluir solo barrios de Madrid.
+
+También se ha comprobado que no existan duplicados en el dataset.
+
+## `Análisis variables`
+
+### **`Outliers`**
+
+#### **`1. Room.Price`**
+
+```{r}
+
+# Boxplot para Room.Price
+ggplot(airbnb_data, aes(y = Room.Price)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue") +
+  labs(title = "Distribución del Precio de la Habitación",
+       y = "Precio (€)",
+       x = "") +
+  theme_minimal()
+
+
+```
+
+#### **`2. Minimum.nights`**
+
+```{r}
+# Boxplot para Minimum.nights
+ggplot(airbnb_data, aes(y = Minimum.nights)) +
+  geom_boxplot(fill = "lightgreen", color = "darkgreen") +
+  labs(title = "Distribución del Número Mínimo de Noches Requeridas",
+       y = "Número Mínimo de Noches",
+       x = "") +
+  theme_minimal()
+
+
+```
+
+#### **`3. Rooms.rent.by.the.host`**
+
+```{r}
+# Boxplot para Rooms.rent.by.the.host
+ggplot(airbnb_data, aes(y = Rooms.rent.by.the.host)) +
+  geom_boxplot(fill = "lightyellow", color = "goldenrod") +
+  labs(title = "Distribución del Número de Habitaciones alquiladas por el host",
+       y = "Habitaciones alquiladas por el host",
+       x = "") +
+  theme_minimal()
+```
+
+#### 
+
+```{r}
+library(dplyr)
+library(tidyr)  # Para pivotar el dataframe
+
+# Filtrar sólo columnas numéricas
+numeric_data <- airbnb_data %>% 
+  select(Room.ID, Host.ID, Room.Price, Minimum.nights, Number.of.reviews, Number.of.reviews.per.month, Rooms.rent.by.the.host)
+
+# Calcular y mostrar el porcentaje de outliers para cada columna numérica
+outliers_summary <- numeric_data %>% 
+  summarise(across(everything(), ~ {
+    q1 <- quantile(., 0.25, na.rm = TRUE)
+    q3 <- quantile(., 0.75, na.rm = TRUE)
+    irq <- q3 - q1
+    lower_bound <- q1 - 1.5 * irq
+    upper_bound <- q3 + 1.5 * irq
+    perc_outliers <- mean(. < lower_bound | . > upper_bound, na.rm = TRUE) * 100
+    sprintf("%.2f%%", perc_outliers)
+  }, .names = "outliers_in_{.col}")) %>%
+  pivot_longer(cols = everything(), names_to = "Variable", values_to = "Percentage_Outliers")
+
+# Imprimir el resumen de outliers como una tabla
+print(outliers_summary)
+
+```
+
+Al analizar los outliers de los atributos numéricos, percibimos que aquellos que tienen **datos extraños son el precio por habitación, el mínimo de noches, el número de reviews, el número de reviews por mes y las habitaciones alquiladas por cada host.** Estos datos se normalizarán en el paso siguiente de pre-procesamiento. Por otra parte, **el Room ID y el Host ID no presentan outliers.**
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(ggplot2)
+
+# Filtrar solo columnas categóricas de tipo factor
+categorical_data <- airbnb_data %>%
+  select(where(is.factor))
+
+# Calcula las tablas de frecuencia para cada variable categórica, las ordena y crea gráficos
+graphs <- imap(categorical_data, ~ {
+    freq <- table(.x)
+    df <- tibble(
+      Category = names(freq),
+      Frequency = as.integer(freq),
+      Percentage = round(100 * prop.table(freq), 2)
+    ) %>%
+    arrange(desc(Percentage))
+
+    # Verificar si estamos trabajando con la variable 'Neighbourhood'
+    if (.y == "Neighbourhood") {
+      # Filtrar para obtener los top 3 y bottom 10
+      df <- df %>%
+        mutate(Position = ifelse(row_number() <= 3, "Top 3", 
+                                 ifelse(row_number() > n() - 10, "Bottom 10", "Otros"))) %>%
+        filter(Position != "Otros") %>%
+        arrange(desc(Frequency))
+      # Crear un gráfico para la variable 'Neighbourhood'
+      ggplot(df, aes(x = reorder(Category, -Frequency), y = Frequency, fill = Position)) +
+        geom_bar(stat = "identity") +
+        labs(title = "Top 3 y Bottom 10 Barrios por Frecuencia",
+             x = "Barrio",
+             y = "Frecuencia") +
+        theme_minimal() +
+        coord_flip()
+    } else {
+      # Crear un gráfico para cualquier otra variable categórica
+      ggplot(df, aes(x = reorder(Category, -Percentage), y = Percentage, fill = Category)) +
+        geom_bar(stat = "identity") +
+        labs(title = paste("Tabla de Frecuencia para la Variable:", .y),
+             x = "Categoría",
+             y = "Porcentaje (%)") +
+        theme_minimal() +
+        coord_flip()
+    }
+})
+
+# Iterar sobre la lista de gráficos y imprimir cada uno
+walk(graphs, ~ suppressWarnings(print(.x)))
+
+
+
+```
+
+Para analizar los **valores extremos de los atributos categóricos**, hemos utilizado las **frecuencias** de cada uno. Gracias a esto, podemos percibir que **hay muchos barrios de Madrid en los que apenas hay listings**, mientras que aquellos en los que más hay son aquellos que se encuentran cerca de la universidad o cerca del centro. Del mismo modo, podemos ver que las **habitaciones de hotel y las habitaciones compartidas son poco comunes entre los tipos de habitación**. En el resto de variables categóricas no se perciben valores inusualmente extremos.
+
+### `Análisis Descriptivo`
+
+#### **`1. Neighbourhood`**
+
+```{r}
+#Histogramas
+
+# Grafico para barrio  
+
+# Calcular la frecuencia de cada barrio
+neighbourhood_freq <- airbnb_data |>
+  count(Neighbourhood) |>
+  arrange(desc(n)) |>
+  top_n(10, n)  # Selecciona solo los top 10
+
+# Graficar la distribución por barrio solo para los top 10
+ggplot(neighbourhood_freq, aes(x = n, y = reorder(Neighbourhood, n))) +
+  geom_bar(stat = "identity", fill = "steelblue") +  # Cambia el color de las barras
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 15),  # Aumenta el tamaño del texto del eje y
+        plot.title = element_text(size = 22, face = "bold")) +  # Aumenta y pone en negrita el título
+  labs(title = "Distribución por Barrio", x = "Frecuencia", y = "Barrio")
+
+
+
+
+
+```
+
+**`Observaciones clave del gráfico:`**
+
+El gráfico representa la `frecuencia de listados de Airbnb en los top 10 barrios más populares`. Cada barra representa un barrio diferente, ordenados de mayor a menor frecuencia de arriba hacia abajo.
+
+1.  **Barrios (Eje Y)**: Desde la parte superior, los barrios listados son Embajadores, Universidad, Palacio, Sol, Justicia, Cortes, Trafalgar, Palos de Moguer, Goya, y Puerta del Angel.
+
+2.  **Frecuencia (Eje X)**: La escala del eje X va desde 0 hasta más de 2000, indicando el número de listados en cada barrio.
+
+El barrio de `Embajadores` tiene la mayor cantidad de listados, seguido por `Universidad y Palacio`. Los barrios de `Goya y Puerta del Angel`, al final de la lista, tienen considerablemente menos listados comparados con los más altos en la gráfica.
+
+**`Suposiciones`**
+
+-   Los barrios con mayor número de listados, como Embajadores y Universidad, probablemente demanden precios más altos debido a su popularidad y atractivos locales.
+
+#### **`2. Room.type`**
+
+```{r}
+# Gráfico para Room.type
+ggplot(airbnb_data, aes(x = Room.type)) +
+  geom_bar(fill = "coral") +
+  labs(title = "Distribución por Tipo de Habitación", x = "Tipo de Habitación", y = "Frecuencia")
+```
+
+\
+Las barras representan la frecuencia de cada tipo de habitación en el dataset.
+
+-   **Tipos de Habitación (Eje X)**: Las categorías mostradas son "Entire home/apt" (casa o apartamento completo), "Hotel room" (habitación de hotel), "Private room" (habitación privada) y "Shared room" (habitación compartida).
+
+-   **Frecuencia (Eje Y)**: El eje vertical muestra la cantidad de listados, con una escala que va de 0 a más de 10,000.
+
+**`Observaciones clave del gráfico:`**
+
+-   **Casa o apartamento completo** tiene la frecuencia más alta, indicando que es el tipo de alojamiento más comúnmente listado.
+
+-   **Habitación privada** es el segundo tipo más común, aunque con una frecuencia significativamente menor en comparación con las casas o apartamentos completos.
+
+-   **Habitación de hotel** y **habitación compartida** tienen las menores frecuencias, con la habitación compartida mostrando la menor popularidad entre los listados.
+
+**`Suposiciones`**
+
+-   Los alojamientos tipo "Entire home/apt" (casa o apartamento completo) pueden comandar precios más altos debido a su mayor demanda y la privacidad que ofrecen.
+
+#### `3. Availability_Cat`
+
+```{r}
+
+# Gráfico para Availability_Cat
+ggplot(airbnb_data, aes(x = Availability_Cat)) +
+  geom_bar(fill = "purple") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Distribución por Categoría de Disponibilidad", x = "Categoría de Disponibilidad", y = "Frecuencia")
+```
+
+Las barras representan la cantidad de propiedades disponibles según diferentes rangos de días al año en que están disponibles para ser alquiladas.
+
+-   **Categorías de Disponibilidad (Eje X)**: Se dividen en seis categorías distintas: "No disponible", "Hasta 30 días", "31 a 60 días", "61 a 90 días", "91 a 180 días", y "181 a 365 días".
+
+-   **Frecuencia (Eje Y)**: El eje vertical indica la cantidad de listados, con una escala que va desde 0 hasta más de 8000.
+
+**`Observaciones clave del gráfico:`**
+
+-   **No disponible** y **181 a 365 días** son las categorías con la mayor frecuencia, indicando que una gran cantidad de propiedades no están disponibles para alquiler o están disponibles casi todo el año.
+
+-   Las demás categorías presentan una menor frecuencia, con la categoría "31 a 60 días" mostrando la menor cantidad de propiedades. Esto sugiere que **menos propiedades están disponibles por períodos intermedios de tiempo.**
+
+-   Las propiedades que se alquilan por "91 a 180 días" tienen una frecuencia considerablemente más alta que las de corto plazo pero menor que las de muy largo plazo, reflejando posiblemente una **preferencia por alquileres de medio término.**
+
+**`Suposiciones:`**
+
+-   Las propiedades listadas como disponibles "181 a 365 días" pueden establecer precios más altos durante temporadas de alta demanda, aprovechando su constante disponibilidad.
+
+#### `4. Time_category`
+
+```{r}
+# Gráfico para Time_category
+ggplot(airbnb_data, aes(x = Time_category)) +
+  geom_bar(fill = "yellow") +
+  labs(title = "Distribución de Time_category (Resta entre Scrapping date y Date.last.review)", x = "Time_category", y = "Frecuencia")
+
+```
+
+**`Observaciones clave del gráfico:`**
+
+El gráfico clasifica las propiedades de Airbnb según el tiempo transcurrido desde la última reseña, distribuyendo esta información a lo largo de cinco categorías distintas. El **eje X** representa las categorías de tiempo, y el **eje Y** muestra la frecuencia de listados en cada categoría.
+
+-   **Sin reseñas**: Mayor frecuencia, indicando muchas propiedades sin reseñas recientes.
+
+-   **Hasta 8 semanas**: Frecuencia significativamente más baja, menos propiedades revisadas recientemente.
+
+-   **8 semanas - 6 meses**: Mayor frecuencia, refleja un volumen considerable de propiedades con reseñas moderadamente recientes.
+
+-   **6-12 meses**: Frecuencia más baja que la categoría "8 semanas - 6 meses", muestra menos actividad reciente.
+
+-   **1+ año**: Frecuencia similar a "sin reseñas", muchas propiedades sin reseñas en el último año.
+
+**`Suposiciones:`**
+
+-   Propiedades con reseñas recientes ("Hasta 8 semanas") pueden aprovechar su reciente popularidad para establecer precios ligeramente más altos, atrayendo huéspedes que valoran la frescura y la actividad positiva reciente.
+
+#### 5. **`Review_category`**
+
+```{r}
+# Gráfico para Review_category
+ggplot(airbnb_data, aes(x = Review_category)) +
+  geom_bar(fill = "green") +
+  labs(title = "Distribución de Review_category", subtitle ="(Categorizacion de Number.of.reviews.per.month)", x = "Review_category", y = "Frecuencia")
+```
+
+**`Observaciones clave del gráfico:`**
+
+El gráfico "Distribución de Review_category" muestra la frecuencia de propiedades de Airbnb según el número de reseñas que reciben por mes. Las categorías van desde "sin reseñas" hasta "más de 5 reseñas por mes". El **eje X** categoriza el número de reseñas mensuales y el **eje Y** muestra la frecuencia de propiedades en cada categoría.
+
+-   **Sin Reseñas**: Representa una frecuencia moderada, lo que indica que un número considerable de propiedades no ha recibido reseñas.
+
+-   **0-1/mes**: Esta categoría tiene la frecuencia más alta, sugiriendo que la mayoría de las propiedades reciben entre cero y una reseña por mes.
+
+-   **1-5/mes**: La segunda categoría más frecuente, mostrando una actividad moderada en términos de reseñas.
+
+-   **+5/mes**: Tiene menos frecuencia en comparación con las categorías de 0-1 y 1-5 reseñas por mes, lo que indica que pocas propiedades reciben más de cinco reseñas mensuales.
+
+**`Suposiciones:`**
+
+-   Propiedades en la categoría "+5/mes" demuestran alta demanda y satisfacción del cliente, lo que podría justificar precios más elevados debido a la percepción de calidad y experiencia superior.
+
+#### `6. Review_Count_Category`
+
+```{r}
+
+# Gráfico para Review_Count_Category
+ggplot(airbnb_data, aes(x = Review_Count_Category)) +
+  geom_bar(fill = "blue") +
+  labs(title = "Distribución de Review_Count_Category", subtitle ="(Categorizacion de Number.of.reviews)", x = "Review_Count_Category", y = "Frecuencia")
+
+```
+
+**`Observaciones clave del gráfico:`**
+
+El gráfico muestra la distribución de `propiedades de Airbnb según el número total de reseñas recibidas`, categorizando desde "sin reseñas" hasta "más de 101 reseñas". En el **eje X** se categoriza el número total de reseñas y el **eje Y** muestra la frecuencia de propiedades por categoría.
+
+-   **Sin reseñas**: Mayor frecuencia, muchas propiedades sin reseñas.
+
+-   **1 Reseña**: Frecuencia menor que "sin reseñas", notable descenso.
+
+-   **2-10 Reseñas**: Mayor que "1 Reseña", indica varias propiedades moderadamente revisadas.
+
+-   **11-50 Reseñas**: Frecuencia similar a "2-10 Reseñas", refleja estabilidad.
+
+-   **51-100 Reseñas**: Menor que las categorías intermedias, aún significativa.
+
+-   **+101 Reseñas**: La menor frecuencia, pocas propiedades muy revisadas.
+
+**`Suposiciones:`**
+
+-   Las propiedades con un alto número de reseñas (51-100 y más de 101 reseñas) pueden aprovechar su estatus comprobado de popularidad y satisfacción del cliente para justificar precios más altos y atraer a huéspedes dispuestos a pagar más por una experiencia de calidad asegurada.
+
+### `Análisis de Variables Numéricas`
+
+#### `1. Room.Price`
+
+```{r}
+ggplot(airbnb_data, aes(x = Room.Price)) +
+  geom_density(fill = "lightblue", alpha = 0.7) +
+  labs(title = "Densidad del Precio de la Habitación",
+       x = "Precio (€)",
+       y = "Densidad") +
+  theme_minimal()
+
+
+```
+
+**`Observaciones clave del gráfico:`**
+
+1.  **Alta concentración de precios bajos:** La mayoría de los precios se agrupan en el extremo inferior, con un pico pronunciado cerca del origen.
+
+2.  **Cola larga hacia precios altos:** Existe una extensión hacia precios más elevados, indicando que algunas propiedades son considerablemente más caras.
+
+3.  **Escasez de opciones caras:** Los puntos dispersos hacia el final de la gráfica muestran que las propiedades muy caras son raras.
+
+4.  **Predominio de opciones económicas:** Una gran proporción de las habitaciones son asequibles, lo que sugiere que Airbnb es accesible para una amplia gama de usuarios.
+
+**Suposiciones:**
+
+-   **Preferencia por precios bajos:** Los huéspedes de Airbnb probablemente prefieren alojamientos más económicos, ya que hay una mayor concentración de habitaciones en rangos de precios más bajos.
+
+#### **`2. Minimum.nights`**
+
+```{r}
+ggplot(airbnb_data, aes(x = Minimum.nights)) +
+  geom_density(fill = "lightgreen", alpha = 0.7) +
+  labs(title = "Densidad del Número Mínimo de Noches Requeridas",
+       x = "Número Mínimo de Noches",
+       y = "Densidad") +
+  theme_minimal()
+
+```
+
+**`Observaciones clave del gráfico:`**
+
+1.  **Dominio de estancias cortas:** Una gran mayoría de los listados requieren un número mínimo de noches bajo, indicado por el pico prominente cerca de cero.
+
+2.  **Raras exigencias de estancias largas:** Hay algunas propiedades que requieren un número significativamente mayor de noches mínimas, como se observa en los picos menores y la cola hacia el derecho del gráfico.
+
+3.  **Poca frecuencia en requisitos extremos:** El gráfico tiene una cola muy larga con densidad cercana a cero, lo que sugiere que es muy poco común que se requieran estancias muy largas.
+
+**`Suposiciones:`**
+
+-   **Preferencia por flexibilidad:** Los huéspedes prefieren y los anfitriones ofrecen opciones que no exigen compromisos de estancia prolongada.
+
+#### **`3.`** `Rooms.rent.by.the.host`
+
+```{r}
+ggplot(airbnb_data, aes(x = Rooms.rent.by.the.host)) +
+  geom_density(fill = "lightyellow", alpha = 0.7) +
+  labs(title = "Densidad del Número de Habitaciones alquiladas por el Host",
+       x = "Habitaciones alquiladas por el host",
+       y = "Densidad") +
+  theme_minimal()
+
+```
+
+**`Observaciones clave del gráfico:`**
+
+1.  **Concentración en pocos listados:** La mayoría de los hosts en Airbnb alquilan pocas habitaciones, como muestra el pico pronunciado cerca del origen.
+
+2.  **Cola larga hacia más habitaciones:** Existen algunos hosts que gestionan un número mayor de habitaciones, aunque son bastante menos frecuentes, evidenciado por la cola larga y baja hacia la derecha.
+
+3.  **Hosts con múltiples propiedades son raros:** La densidad se reduce drásticamente a medida que aumenta el número de habitaciones alquiladas, sugiriendo que los hosts con muchas propiedades son excepcionales.
+
+**Suposiciones:**
+
+-   **Dominio de pequeños operadores:** La mayoría de los hosts probablemente gestionan sus listados a pequeña escala, indicando que Airbnb sigue siendo una plataforma accesible para individuos o familias.
+
+## `EDA: Análisis Exploratorio de Datos`
+
+#### **Histograma del vecindario en términos de distritos**
+
+```{r}
+# Calcular la frecuencia de cada distrito
+distrito_frecuencia <- airbnb_data %>%
+  count(Neighbourhood) %>%
+  arrange(desc(n))  # Ordenar en orden descendente por frecuencia
+
+# Obtener los top 10 distritos más frecuentes
+top10_distritos <- distrito_frecuencia %>%
+  top_n(10, n)
+
+# Reorganizar el factor Neighbourhood en función de su frecuencia
+airbnb_data$Neighbourhood <- factor(airbnb_data$Neighbourhood, levels = distrito_frecuencia$Neighbourhood)
+
+# Filtrar solo las filas que corresponden a los 10 principales distritos
+airbnb_data_top10 <- airbnb_data %>%
+  filter(Neighbourhood %in% top10_distritos$Neighbourhood)
+
+# Trazar el histograma
+ggplot(airbnb_data_top10, aes(x = Neighbourhood)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  labs(title = "Histograma Top10 del Vecindario en Términos de Distritos", subtitle="(Top 10, Orden Descendente)", 
+       x = "Distrito", 
+       y = "Frecuencia") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+**`¿Cuáles son los distritos más populares en Airbnb?`**
+
+-   **Embajadores** es el distrito con la mayor frecuencia de listados, seguido de **Universidad** y **Palacio**, indicando que estas áreas son probablemente las más demandadas o con más oferta de alojamientos en Airbnb.
+
+-   A partir de **Sol** en adelante, la frecuencia de los listados comienza a disminuir progresivamente.
+
+-   Los distritos como **Goya** y **Puerta del Angel** muestran las menores frecuencias dentro de este top 10, lo que podría sugerir una menor popularidad o una oferta más limitada de alojamientos en estas áreas comparado con distritos como Embajadores o Universidad.
+
+### **`Distribución de precio vs número de reseñas`**
+
+```{r}
+ggplot(airbnb_data, aes(x = Room.Price, y = Number.of.reviews)) +
+
+geom_point(color = "blue") +
+
+labs(title = "Distribución de Precio vs Número de Reseñas", x = "Precio de la Habitación (€)", y = "Número de Reseñas")
+
+
+```
+
+**`¿Existe una correlación entre los precios de las habitaciones y el número de reseñas que reciben, indicando la popularidad o la percepción de valor por parte de los usuarios?`**
+
+1.  **Predominio de precios bajos y reseñas moderadas**: La mayoría de los listados tienen precios inferiores a 1,000 euros y menos de 200 reseñas, indicando que las propiedades más asequibles son comunes pero no acumulan muchas reseñas.
+
+2.  **Propiedades caras con reseñas dispersas**: Algunas propiedades con precios superiores a 2,500 euros tienen desde cero hasta muchas reseñas, lo que sugiere que un precio más alto no garantiza una mayor popularidad.
+
+3.  **Picos de popularidad a precios accesibles**: Un número significativo de reseñas se observa en propiedades con precios razonables, lo que indica que ciertas propiedades a precios moderados son muy populares.
+
+En resumen, no existe una correlación clara entre precios altos y un mayor número de reseñas, implicando que otros factores como ubicación y calidad podrían influir más en la popularidad.
+
+### **Precio promedio vs tipo de habitación**
+
+```{r}
+
+ggplot(airbnb_data, aes(x = Room.type, y = Room.Price)) +
+  geom_bar(stat = "summary", fun = "mean", fill = "lightgreen", color = "darkgreen") +
+  geom_hline(yintercept = mean(airbnb_data$Room.Price), color = "red", linetype = "dashed", linewidth = 1) +
+  labs(title = "Precio Promedio vs Tipo de Habitación", x = "Tipo de Habitación", y = "Precio Promedio (€)")
+
+
+
+
+
+```
+
+**`¿Cómo varían los precios promedios de las diferentes tipos de habitaciones en Airbnb, y qué tipo de habitación tiene el precio promedio más alto en Madrid?`**
+
+-   **Casa o Apartamento Completo**: Este tipo de alojamiento tiene el precio promedio más alto, considerablemente más alto que los otros tipos, lo que indica que alquilar una propiedad completa es generalmente más costoso.
+
+-   **Habitación de Hotel**: Tiene un precio promedio significativamente más bajo que un apartamento o casa completa, pero más alto que una habitación privada o compartida.
+
+-   **Habitación Privada**: Presenta un precio promedio más bajo que la habitación de hotel.
+
+-   **Habitación Compartida**: Es la opción más económica, con el precio promedio más bajo entre los tipos de habitaciones mostrados.
+
+### Top 10 - Tipo de propiedad y áreas (distritos)
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Calcula la cantidad total de listados por distrito
+distrito_counts <- airbnb_data %>%
+  group_by(Neighbourhood) %>%
+  summarise(Total = n()) %>%
+  arrange(desc(Total))
+
+# Selecciona los top 10 distritos
+top_distritos <- distrito_counts %>%
+  top_n(10, Total) %>%
+  pull(Neighbourhood)
+
+# Filtra el dataset original para incluir solo esos distritos
+filtered_data <- airbnb_data %>%
+  filter(Neighbourhood %in% top_distritos)
+
+# Crear el gráfico de barras apiladas para los top 10 distritos
+ggplot(data = filtered_data, aes(x = Neighbourhood, fill = `Room.type`)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x = "Distrito", y = "Cantidad") +
+  ggtitle("Distribución de tipos de propiedad por distritos en Madrid")
+# 
+```
+
+**`¿Cómo se distribuyen los diferentes tipos de habitaciones en el top 10 de distritos de Madrid y qué distritos presentan una mayor diversidad de opciones de alojamiento?`**
+
+**Diversidad de Habitaciones:**
+
+-   **Embajadores y Universidad**: Son los distritos con más alojamientos y una amplia variedad de tipos de habitaciones, predominando los apartamentos enteros y habitaciones privadas, con escasas opciones de habitaciones compartidas y de hotel.
+
+-   **Palacio, Sol y Justicia**: Presentan un balance entre apartamentos enteros y habitaciones privadas, con Palacio ofreciendo algo más de habitaciones de hotel.
+
+**Mayor y Menor Diversidad:**
+
+-   **Mayor Diversidad**: Embajadores y Universidad destacan por su alta cantidad de listados y diversidad, con una mezcla de casi todos los tipos de alojamiento.
+
+-   **Menor Diversidad**: Distritos como Tetuán, Triángulo del Arte, Chamberí, y Puerta del Ángel tienen menos opciones y se enfocan más en apartamentos enteros y habitaciones privadas, con limitadas ofertas de habitaciones de hotel o compartidas.
+
+### **`Top 10 - Distribución de precios vs distrito`** 
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Calcula la cantidad total de listados por distrito
+distrito_counts <- airbnb_data %>%
+  group_by(Neighbourhood) %>%
+  summarise(Total = n()) %>%
+  arrange(desc(Total))
+
+# Selecciona los top 10 distritos
+top_distritos <- distrito_counts %>%
+  slice_max(Total, n = 10) %>%
+  pull(Neighbourhood)
+
+# Filtra el dataset original para incluir solo esos distritos
+filtered_data <- airbnb_data %>%
+  filter(Neighbourhood %in% top_distritos)
+
+# Crea el gráfico de boxplot para los top 10 distritos
+ggplot(data = filtered_data, aes(x = Neighbourhood, y = Room.Price)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 1) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x = "Distrito", y = "Precio (€)", title = "Variabilidad de precios por distrito en Madrid - Top 10 Distritos") +
+  theme_minimal()
+
+
+```
+
+**`¿Cómo varían los precios de los alojamientos de Airbnb entre diferentes distritos del top10 de Madrid y cuáles presentan la mayor variabilidad en sus precios?`**
+
+-   **Distritos con Mayor Variabilidad**: Distritos como Embajadores, Universidad, y Palacio muestran una amplia variabilidad en precios, con numerosos valores atípicos que indican precios extremadamente altos comparados con la mediana.
+
+-   **Distritos con Menor Variabilidad**: Distritos como Justicia, Cortes, y Puerta del Ángel parecen tener una variabilidad más contenida, con menos valores atípicos y cajas más estrechas, lo que sugiere precios más consistentes y predecibles. 
+
+### **`Gráfico de Distribución en Madrid`**
+
+Las columnas `Latitude` y `Longitude` están disponibles, podemos crear un mapa de puntos en Madrid:
+
+```{r}
+
+# Crear un mapa con Leaflet
+madrid_map <- leaflet(data = airbnb_data) |>
+  addTiles()  # Añadir el mapa base
+
+# Añadir la capa de mapa de calor
+madrid_map <- madrid_map |>
+  addHeatmap(
+    lng = ~Longitude, lat = ~Latitude, intensity = ~1,
+    blur = 20, max = 0.05, radius = 15
+  )
+
+# Establecer la vista inicial del mapa y mostrarlo
+madrid_map <- madrid_map |>
+  setView(lng = -3.703, lat = 40.416, zoom = 11)
+
+# Imprimir el mapa
+madrid_map
+
+```
+
+**`¿Cómo se distribuyen geográficamente los listados de Airbnb en Madrid y qué áreas muestran mayor concentración de alojamientos?`**
+
+-   **Alta Concentración en el Centro**: La mayor densidad de listados de Airbnb se observa en el centro de Madrid. Las áreas alrededor del centro de la ciudad, particularmente barrios como Sol, Gran Vía, y La Latina, muestran los puntos más calientes en rojo intenso, indicando una concentración muy alta de alojamientos.
+
+-   **Dispersión hacia las Afueras**: A medida que te alejas del centro, la concentración de listados disminuye, como se puede ver en las áreas que rodean el núcleo central de la ciudad. Sin embargo, hay bolsas de moderada actividad (áreas en amarillo y verde) en barrios periféricos y municipios cercanos como Pozuelo de Alarcón y Alcobendas.
+
+```{r}
+# Definir una función para determinar el color basado en el precio
+get_color <- function(price) {
+  if (price < 50) {
+    "#00FF00"  # Verde para precios bajos
+  } else if (price < 100) {
+    "#FFFF00"  # Amarillo para precios medios
+  } else {
+    "#FF0000"  # Rojo para precios altos
+  }
+}
+
+# Crear el mapa usando leaflet, aplicando directamente la función de colores
+madrid_map <- leaflet(data = airbnb_data) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addCircleMarkers(
+    ~Longitude, ~Latitude,
+    radius = 5,
+    color = ~sapply(Room.Price, get_color),
+    fillOpacity = 0.5,
+    stroke = FALSE,  # No dibujar bordes alrededor de los círculos
+    group = "Airbnb Locations"
+  ) %>%
+  setView(lng = -3.703, lat = 40.416, zoom = 11)
+
+# Imprimir el mapa
+madrid_map
+
+```
+
+**`Observaciones del Gráfico:`**
+
+-   **Zonas Verdes (Precios Bajos)**: Las áreas con alojamientos de precios bajos (menos de 50 €) están dispersas pero menos concentradas que las de precios más altos. Parecen estar más presentes en las periferias de la ciudad y en municipios alejados del centro de Madrid.
+
+-   **Zonas Amarillas (Precios Medios)**: Las zonas que representan precios medios (entre 50 y 100 €) forman una transición entre las áreas más baratas y las más caras, y están distribuidas de forma bastante uniforme en toda la ciudad, indicando una opción de alojamiento común en muchas áreas.
+
+-   **Zonas Rojas (Precios Altos)**: Las áreas con alojamientos de precios altos (más de 100 €) están altamente concentradas en el centro de Madrid, especialmente en barrios céntricos y turísticos. Estas zonas rojas destacan en el corazón de la ciudad, donde se localizan muchas de las principales atracciones y servicios.
+
+### **Mapa de Calor de Correlación**
+
+```{r}
+
+
+# Seleccionando columnas relevantes para la correlación
+cor_data <- airbnb_data |>
+  select(Room.Price, Minimum.nights, Number.of.reviews, Number.of.reviews.per.month, Rooms.rent.by.the.host) |>
+  na.omit()  # Eliminando filas con valores NA para evitar errores
+
+# Calculando la matriz de correlación
+cor_matrix <- cor(cor_data)
+
+# Generando el mapa de calor
+corrplot(cor_matrix, method = "color", type = "upper", order = "hclust",
+         tl.col = "black", tl.srt = 45, addrect = 2, 
+         title = "Mapa de Calor de Correlación para AirBnB en Madrid",
+         mar = c(0, 0, 2, 0))  # Ajusta el margen superior para dar más espacio al título
+
+
+```
+
+**`¿Qué variables están más fuertemente correlacionadas con el precio de los alojamientos en Airbnb?`**
+
+-   **"Rooms.rent.by.the.host"**: Esta variable muestra una correlación negativa con "Room.Price", indicada por el tono azul oscuro en el gráfico. Esto sugiere que cuanto más habitaciones alquila un host, podría haber una tendencia a precios más bajos por habitación.
+
+-   **"Number.of.reviews" y "Number.of.reviews.per.month"**: Ambas variables tienen una correlación muy baja con "Room.Price", como se ve por los tonos más claros en el gráfico. Esto indica que la cantidad de reseñas no influye significativamente en el precio.
+
+-   **"Minimum.nights"**: La correlación entre "Minimum.nights" y "Room.Price" también es baja, lo que indica que la cantidad mínima de noches requeridas no es un factor significativo en el precio de los alojamientos.
+
+### **`Matriz de Dispersión y Correlación de Variables`**
+
+```{r}
+
+# Las columnas relevantes para la correlación, están guardadas en la variable cor_data
+ 
+ggpairs(cor_data, 
+        lower = list(continuous = wrap("points", alpha = 0.3,size=0.3  ,color='blue')), 
+        upper = list(continuous = wrap("cor", size=4))
+               )
+```
+
+-   **Correlaciones Notables**:
+
+    -   **Rooms.rent.by.the.host vs. Room.Price**: Presenta una correlación positiva moderada (0.170\*\*\*), sugiriendo que los anfitriones que rentan más habitaciones tienden a cobrar precios más altos, aunque la relación no es muy fuerte.
+
+    -   **Number.of.reviews.per.month vs. Number.of.reviews**: Muestra una correlación muy alta (0.828\*\*\*), lo cual es esperado ya que estas variables están intrínsecamente relacionadas.
+
+-   **Correlaciones Débiles o Negativas**:
+
+    -   La mayoría de las otras variables muestran correlaciones débiles o negativas con el "Room.Price", como "Minimum.nights" y "Number.of.reviews", indicando que estos factores tienen menos influencia sobre el precio.
+
+## **`KPIs`**
+
+Basado en nuestro análisis exploratorio, estos son nuestros KPIs elegidos:
+
+1.  **Distritos más populares en Airbnb**
+
+2.  **Correlación entre precio y número de reseñas**
+
+3.  **Variación de precios por tipo de habitación**
+
+4.  **Distribución de tipos de habitación por distrito**
+
+5.  **Variabilidad de precios por distrito**
+
+6.  **Distribución geográfica de listados**
+
+7.  **Correlaciones principales con el precio**
+
+## **`Exportación dataset procesado`**
+
+```{r}
+rmarkdown::render("cuaderno.qmd", output_format = "pdf_document", output_file = "analisis_exploratorio")
+```
+
+Ahora vamos a generar el dataset procesado:
+
+```{r}
+
+# Exportar el dataframe procesado a CSV 
+write.csv2(airbnb_data, "../data/processed/processed-air-bnb-listings.csv", row.names = FALSE, fileEncoding = "UTF-8")
+
+```
