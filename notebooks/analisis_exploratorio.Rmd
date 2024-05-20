@@ -172,7 +172,7 @@ str(airbnb_data[, c("Date.last.review", "Updated.Date", "Room.type", "Neighbourh
 
 **`Data.last.review y Update.Date`.**
 
-**Deberían ser fecha:** Ya que ambas variables permiten cálculos como la diferencia de días entre eventos, agrupación por períodos de tiempo (por ejemplo, mes, año), y correlacionar eventos o cambios con fechas específicas, lo cual sería difícil si estas variables fueran tratadas de otra manera (como character por ejemplo).
+**Deberían ser fecha:** Ya que ambas variables permiten cálculos como la diferencia de días entre eventos o agrupación por períodos de tiempo (por ejemplo, mes, año), lo cual sería difícil si estas variables fueran tratadas como character.
 
 **`Room.type, Neighbourhood, City y Country`**
 
@@ -1468,6 +1468,8 @@ Una vez tratado el dataset, este es el set de datos con el trabajaremos en el pr
 ```{r}
 colnames(airbnb_data)
 ```
+
+Con las siguientes variables:
 
 1.  **`Room.ID`**: Identificador único de cada listado en Airbnb.
 2.  **`Name`**: Nombre descriptivo del listado.
