@@ -122,7 +122,7 @@ Los resultados obtenidos en este estudio pueden ser específicos para el conjunt
 git clone https://github.com/AndreaTJ/Tech-Girls-Glovo.git
 cd Tech-Girls-Glovo
 
-2. **Explorar los Notebooks:**
+2. Explorar los Notebooks:
 
 - Navega a la carpeta notebooks y abre los archivos .ipynb con Jupyter Notebook.
 - Ejecuta las celdas de código en orden para reproducir los análisis y resultados obtenidos.
