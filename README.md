@@ -1,6 +1,23 @@
 # TECH-GIRLS-GLOVO
 ![madrid](https://github.com/AndreaTJ/Tech-Girls-Glovo/raw/main/docs/banner-madrid.jpg)
 
+# Índice
+
+- [Introducción](#predicción-de-precios-de-airbnb-en-madrid)
+- [Estructura del Repositorio](#estructura-del-repositorio)
+- [Resultados del proyecto](#resultados-del-proyecto)
+   - [Arquitectura y Validación de Datos](#arquitectura-y-validación-de-datos)
+   - [Análisis Exploratorio](#análisis-exploratorio)
+   - [Visualización de las Métricas](#visualización-de-las-métricas)
+   - [Pre-procesamiento](#pre-procesamiento)
+   - [Modelado](#modelado)
+   - [Pipeline](#pipeline)
+- [Conclusiones](#conclusiones)
+- [Limitaciones](#limitaciones)
+- [Instrucciones de Uso](#instrucciones-de-uso)
+- [Licencia](#licencia)
+- [Integrantes del Grupo](#integrantes-del-grupo)
+
 # Predicción de Precios de Airbnb en Madrid
 
 Este repositorio contiene el código y la documentación para un proyecto de modelado predictivo destinado a predecir los precios de las habitaciones de Airbnb en Madrid. Se utilizan técnicas de análisis de datos y aprendizaje automático para desarrollar modelos que puedan 
@@ -32,7 +49,7 @@ El repositorio contiene el proyecto para analizar y predecir precios de inmueble
 - `data`: Contiene los datasets en formatos raw y processed.
 - `docs`: Documentación adicional.
 - `notebooks`: Notebooks y scripts utilizados para el análisis y modelado.
-- `reports`: Informes generados del proyecto.
+- `reports`: Informes generados del proyecto y presentación. 
 
 ## Resultados del proyecto:
 ### Arquitectura y Validación de Datos
@@ -43,9 +60,8 @@ y una gestión eficiente de la base de datos. Es una base para construir platafo
 Adiocionalmente se realizó un muestreo inicial y una exploración exhaustiva de los datos para identificar posibles problemas de calidad, como valores nulos y outliers. Además, se llevó a cabo una validación de los datos para garantizar su integridad y coherencia.
 
 ### Análisis Exploratorio
-Durante el análisis exploratorio de los datos, se detectaron y trataron los outliers y valores nulos, asegurando así la calidad de los datos utilizados en el modelado. Se realizaron visualizaciones informativas, como boxplots e histogramas, para comprender mejor la
-distribución de las variables y su relación con el precio de alquiler.
-Entre lo mas relevante se puede observar la relación del precio con los barrio y la variabilidad de los datos: 
+Durante el análisis exploratorio de los datos, se detectaron y trataron los outliers y valores nulos, asegurando así la calidad de los datos utilizados en el modelado. Se realizaron visualizaciones informativas, como boxplots e histogramas, para comprender mejor la distribución de las variables y su relación con el precio de alquiler. Entre lo mas relevante se puede observar la relación del precio con los barrio y la variabilidad de los datos: 
+
 ![Diagrama de precios](https://github.com/AndreaTJ/Tech-Girls-Glovo/blob/main/docs/precios.png)
 
 
@@ -143,11 +159,11 @@ Sigue las instrucciones en los notebooks o scripts en la carpeta notebooks para 
 Este proyecto está bajo la licencia MIT. Puedes ver los detalles de la licencia en el archivo [LICENSE](LICENSE).
 
 ## Integrantes del Grupo
-- Andrea Torres Jaramillo: [AndreaTJ](https://github.com/AndreaTJ)
-- Clara Garriga: [gmclara](https://github.com/gmclara)
-- Elsa Toledo Gómez: [ELSATOLEDO](https://github.com/ELSATOLEDO)
-- Miriam Moreira Rubio: [MiriamM](https://github.com/Mimoru93)
-- Neivys González Gómez: [NeivysG](https://github.com/neiluz)
-- Viviana Pico Paredes: [VivianaPico](https://github.com/VivianaPico)
+- Andrea Torres Jaramillo: [AndreaTJ](https://www.linkedin.com/in/andrea-torres-j/)
+- Clara Garriga: [gmclara](https://www.linkedin.com/in/claragarrigam/)
+- Elsa Toledo Gómez: [ELSATOLEDO](https://www.linkedin.com/in/elsa-toledo-aa355b289/)
+- Miriam Moreira Rubio: [MiriamM](https://www.linkedin.com/in/miriam-moreira-rubio/)
+- Neivys González Gómez: [NeivysG](https://www.linkedin.com/in/neivyslgonzalezg/)
+- Viviana Pico Paredes: [VivianaPico](https://www.linkedin.com/in/viviana-pico/)
 
   
