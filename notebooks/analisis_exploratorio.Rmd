@@ -1143,43 +1143,43 @@ ggplot(airbnb_data, aes(x = Rooms.rent.by.the.host)) +
 
 ## **`EDA: Análisis Exploratorio de Datos`**
 
-### Histograma del vecindario en términos de distritos
+### Top10 Barrios Más Populares Airbnb
 
 ```{r}
-# Calcular la frecuencia de cada distrito
-distrito_frecuencia <- airbnb_data %>%
+# Calcular la frecuencia de cada barrio
+barrio_frecuencia <- airbnb_data %>%
   count(Neighbourhood) %>%
   arrange(desc(n))  # Ordenar en orden descendente por frecuencia
 
-# Obtener los top 10 distritos más frecuentes
-top10_distritos <- distrito_frecuencia %>%
+# Obtener los top 10 barrios más frecuentes
+top10_barrios <- barrio_frecuencia %>%
   top_n(10, n)
 
 # Reorganizar el factor Neighbourhood en función de su frecuencia
-airbnb_data$Neighbourhood <- factor(airbnb_data$Neighbourhood, levels = distrito_frecuencia$Neighbourhood)
+airbnb_data$Neighbourhood <- factor(airbnb_data$Neighbourhood, levels = barrio_frecuencia$Neighbourhood)
 
-# Filtrar solo las filas que corresponden a los 10 principales distritos
+# Filtrar solo las filas que corresponden a los 10 principales barrios
 airbnb_data_top10 <- airbnb_data %>%
-  filter(Neighbourhood %in% top10_distritos$Neighbourhood)
+  filter(Neighbourhood %in% top10_barrios$Neighbourhood)
 
 # Trazar el histograma
 ggplot(airbnb_data_top10, aes(x = Neighbourhood)) +
   geom_bar(fill = "skyblue", color = "black") +
-  labs(title = "Histograma Top10 del Vecindario en Términos de Distritos", subtitle="(Top 10, Orden Descendente)", 
-       x = "Distrito", 
+  labs(title = "Top10 Barrios Más Populares Airbnb", subtitle="(Top 10, Orden Descendente)", 
+       x = "Barrio", 
        y = "Frecuencia") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 ```
 
-**`¿Cuáles son los distritos más populares en Airbnb?`**
+**`¿Cuáles son los barrios más populares en Airbnb?`**
 
--   **Embajadores** es el distrito con la mayor frecuencia de listados, seguido de **Universidad** y **Palacio**, indicando que estas áreas son probablemente las más demandadas o con más oferta de alojamientos en Airbnb.
+-   **Embajadores** es el barrio con la mayor frecuencia de listados, seguido de **Universidad** y **Palacio**, indicando que estas áreas son probablemente las más demandadas o con más oferta de alojamientos en Airbnb.
 
 -   A partir de **Sol** en adelante, la frecuencia de los listados comienza a disminuir progresivamente.
 
--   Los distritos como **Goya** y **Puerta del Angel** muestran las menores frecuencias dentro de este top 10, lo que podría sugerir una menor popularidad o una oferta más limitada de alojamientos en estas áreas comparado con distritos como Embajadores o Universidad.
+-   Los barrios como **Goya** y **Puerta del Angel** muestran las menores frecuencias dentro de este top 10, lo que podría sugerir una menor popularidad o una oferta más limitada de alojamientos en estas áreas comparado con barrios como Embajadores o Universidad.
 
 ### Distribución de precio vs número de reseñas
 
@@ -1228,41 +1228,41 @@ ggplot(airbnb_data, aes(x = Room.type, y = Room.Price)) +
 
 -   **Habitación Compartida**: Es la opción más económica, con el precio promedio más bajo entre los tipos de habitaciones mostrados.
 
-### Top 10 - Tipo de propiedad y áreas (distritos)
+### Top 10 - Tipo de propiedad por barrios en Madrid
 
 ```{r}
 library(dplyr)
 library(ggplot2)
 
-# Calcula la cantidad total de listados por distrito
-distrito_counts <- airbnb_data %>%
+# Calcula la cantidad total de listados por barrio
+barrios_counts <- airbnb_data %>%
   group_by(Neighbourhood) %>%
   summarise(Total = n()) %>%
   arrange(desc(Total))
 
-# Selecciona los top 10 distritos
-top_distritos <- distrito_counts %>%
+# Selecciona los top 10 barrios
+top_barrios <- barrios_counts %>%
   top_n(10, Total) %>%
   pull(Neighbourhood)
 
-# Filtra el dataset original para incluir solo esos distritos
+# Filtra el dataset original para incluir solo esos barrios
 filtered_data <- airbnb_data %>%
-  filter(Neighbourhood %in% top_distritos)
+  filter(Neighbourhood %in% top_barrios)
 
-# Crear el gráfico de barras apiladas para los top 10 distritos
+# Crear el gráfico de barras apiladas para los top 10 barrios
 ggplot(data = filtered_data, aes(x = Neighbourhood, fill = `Room.type`)) +
   geom_bar() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(x = "Distrito", y = "Cantidad") +
-  ggtitle("Distribución de tipos de propiedad por distritos en Madrid")
+  labs(x = "barrio", y = "Cantidad") +
+  ggtitle("Distribución de tipos de propiedad por barrios en Madrid")
 # 
 ```
 
-**`¿Cómo se distribuyen los diferentes tipos de habitaciones en el top 10 de distritos de Madrid y qué distritos presentan una mayor diversidad de opciones de alojamiento?`**
+**`¿Cómo se distribuyen los diferentes tipos de habitaciones en el top 10 de barrios de Madrid y qué barrios presentan una mayor diversidad de opciones de alojamiento?`**
 
 **Diversidad de Habitaciones:**
 
--   **Embajadores y Universidad**: Son los distritos con más alojamientos y una amplia variedad de tipos de habitaciones, predominando los apartamentos enteros y habitaciones privadas, con escasas opciones de habitaciones compartidas y de hotel.
+-   **Embajadores y Universidad**: Son los barrios con más alojamientos y una amplia variedad de tipos de habitaciones, predominando los apartamentos enteros y habitaciones privadas, con escasas opciones de habitaciones compartidas y de hotel.
 
 -   **Palacio, Sol y Justicia**: Presentan un balance entre apartamentos enteros y habitaciones privadas, con Palacio ofreciendo algo más de habitaciones de hotel.
 
@@ -1270,44 +1270,44 @@ ggplot(data = filtered_data, aes(x = Neighbourhood, fill = `Room.type`)) +
 
 -   **Mayor Diversidad**: Embajadores y Universidad destacan por su alta cantidad de listados y diversidad, con una mezcla de casi todos los tipos de alojamiento.
 
--   **Menor Diversidad**: Distritos como Tetuán, Triángulo del Arte, Chamberí, y Puerta del Ángel tienen menos opciones y se enfocan más en apartamentos enteros y habitaciones privadas, con limitadas ofertas de habitaciones de hotel o compartidas.
+-   **Menor Diversidad**: Barrios como Tetuán, Triángulo del Arte, Chamberí, y Puerta del Ángel tienen menos opciones y se enfocan más en apartamentos enteros y habitaciones privadas, con limitadas ofertas de habitaciones de hotel o compartidas.
 
-### Top 10 - Distribución de precios vs distrito 
+### Top 10 - Distribución de precios vs barrio 
 
 ```{r}
 library(dplyr)
 library(ggplot2)
 
-# Calcula la cantidad total de listados por distrito
-distrito_counts <- airbnb_data %>%
+# Calcula la cantidad total de listados por barrio
+barrios_counts <- airbnb_data %>%
   group_by(Neighbourhood) %>%
   summarise(Total = n()) %>%
   arrange(desc(Total))
 
-# Selecciona los top 10 distritos
-top_distritos <- distrito_counts %>%
+# Selecciona los top 10 barrios
+top_barrios <- barrios_counts %>%
   slice_max(Total, n = 10) %>%
   pull(Neighbourhood)
 
-# Filtra el dataset original para incluir solo esos distritos
+# Filtra el dataset original para incluir solo esos barrios
 filtered_data <- airbnb_data %>%
-  filter(Neighbourhood %in% top_distritos)
+  filter(Neighbourhood %in% top_barrios)
 
-# Crea el gráfico de boxplot para los top 10 distritos
+# Crea el gráfico de boxplot para los top 10 barrios
 ggplot(data = filtered_data, aes(x = Neighbourhood, y = Room.Price)) +
   geom_boxplot(outlier.colour = "red", outlier.shape = 1) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(x = "Distrito", y = "Precio (€)", title = "Variabilidad de precios por distrito en Madrid - Top 10 Distritos") +
+  labs(x = "barrio", y = "Precio (€)", title = "Variabilidad de precios por barrio en Madrid - Top 10 barrios") +
   theme_minimal()
 
 
 ```
 
-**`¿Cómo varían los precios de los alojamientos de Airbnb entre diferentes distritos del top10 de Madrid y cuáles presentan la mayor variabilidad en sus precios?`**
+**`¿Cómo varían los precios de los alojamientos de Airbnb entre diferentes barrios del top10 de Madrid y cuáles presentan la mayor variabilidad en sus precios?`**
 
--   **Distritos con Mayor Variabilidad**: Distritos como Embajadores, Universidad, y Palacio muestran una amplia variabilidad en precios, con numerosos valores atípicos que indican precios extremadamente altos comparados con la mediana.
+-   **barrios con Mayor Variabilidad**: barrios como Embajadores, Universidad, y Palacio muestran una amplia variabilidad en precios, con numerosos valores atípicos que indican precios extremadamente altos comparados con la mediana.
 
--   **Distritos con Menor Variabilidad**: Distritos como Justicia, Cortes, y Puerta del Ángel parecen tener una variabilidad más contenida, con menos valores atípicos y cajas más estrechas, lo que sugiere precios más consistentes y predecibles. 
+-   **barrios con Menor Variabilidad**: barrios como Justicia, Cortes, y Puerta del Ángel parecen tener una variabilidad más contenida, con menos valores atípicos y cajas más estrechas, lo que sugiere precios más consistentes y predecibles. 
 
 ### Gráfico de Distribución en Madrid
 
@@ -1435,33 +1435,39 @@ ggpairs(cor_data,
 
 Basado en nuestro análisis exploratorio, estos son nuestros KPIs elegidos:
 
-1.  **Distritos más populares en Airbnb**
+1.  **Distribución geográfica de listados**
 
-2.  **Correlación entre precio y número de reseñas**
+2.  **Barrios más populares en Airbnb y su distribución según los de tipos de habitación**
 
-3.  **Variación de precios por tipo de habitación**
+3.  **Correlación entre precio y número de reseñas**
 
-4.  **Distribución de tipos de habitación por distrito**
+4.  **Variación de precios por tipo de habitación**
 
-5.  **Variabilidad de precios por distrito**
+5.  **Variabilidad de precios por barrio**
 
-6.  **Distribución geográfica de listados**
+## **`Conclusiones del Análisis`**
 
-7.  **Correlaciones principales con el precio**
+#### Datos Atípicos y Variables Numéricas
 
-## **Conclusiones**
+-   **Datos Atípicos:** Al observar gráficos de cajas y la tabla de outliers, se nota la presencia de valores atípicos en **precio por habitación, el mínimo de noches, el número de reviews, el número de reviews por mes, las habitaciones alquiladas por cada host, latitud y longitud** que podrían complicar análisis más detallados si no se manejan adecuadamente.
 
-Después de un análisis exhaustivo de los datos de Airbnb en Madrid, hemos sacado algunas conclusiones:
+#### Variables Categóricas
 
--   **Precios amigables**: La mayoría de los alojamientos en Airbnb en Madrid son económicos, lo que significa que la plataforma es accesible para muchos presupuestos.
+-   **Barrios populares:** Los barrios como Embajadores y Universidad tienen muchos alojamientos listados, lo que puede indicar que son zonas muy buscadas o bien ubicadas.
+-   **Tipos de habitación:** Las casas o apartamentos completos son los más ofrecidos, mostrando que la gente prefiere este tipo de alojamiento sobre otros como habitaciones compartidas o de hotel.
 
--   **Estancias cortas**: La mayoría de los alojamientos permiten estancias cortas, lo que hace que sea más fácil reservar por unos pocos días.
+#### Análisis General de los Datos
 
--   **Mucha variedad**: Madrid tiene muchos tipos de alojamientos, desde apartamentos enteros hasta compartir una habitación, para que todos puedan encontrar algo que les guste.
+-   **Distribución de los alojamientos:** La mayoría de los alojamientos están en el centro de Madrid, algo común en las grandes ciudades donde hay más turistas y actividades.
+-   **Precios y número de reseñas:** No hay una relación clara entre los precios y el número de reseñas, lo que sugiere que el precio podría depender más de donde está el alojamiento o qué tipo es.
 
-**Parece no** haber una relación clara entre los precios de los alojamientos y el número de opiniones que reciben, lo que sugiere que hay otros factores que influyen más en su popularidad.
+#### Sugerencias para Mejorar los Datos
 
-## Tratamiento del Dataset procesado
+-   **Manejo de datos atípicos:** Sería bueno usar métodos como transformaciones logarítmicas para reducir el efecto de los valores atípicos.
+-   **Agregar más información:** Incluir más detalles como características del barrio o eventos cercanos podría ayudar a entender mejor qué afecta los precios y la popularidad de los alojamientos.
+-   **Impacto de la Pandemia**: Notamos que la pandemia de COVID-19 pudo haber sesgado los datos, dado que los datos fueron recolectados el 20 de agosto de 2020, en medio de restricciones globales de viaje que alteraron significativamente el turismo y la hospitalidad.
+
+## **`Tratamiento del Dataset procesado`**
 
 ### Variables finales.
 
