@@ -1,6 +1,23 @@
 # TECH-GIRLS-GLOVO
 ![madrid](https://github.com/AndreaTJ/Tech-Girls-Glovo/raw/main/docs/banner-madrid.jpg)
 
+# Índice
+
+- [Introducción](#predicción-de-precios-de-airbnb-en-madrid)
+- [Estructura del Repositorio](#estructura-del-repositorio)
+- [Resultados del proyecto](#resultados-del-proyecto)
+   - [Arquitectura y Validación de Datos](#arquitectura-y-validación-de-datos)
+   - [Análisis Exploratorio](#análisis-exploratorio)
+   - [Visualización de las Métricas](#visualización-de-las-métricas)
+   - [Pre-procesamiento](#pre-procesamiento)
+   - [Modelado](#modelado)
+   - [Pipeline](#pipeline)
+- [Conclusiones](#conclusiones)
+- [Limitaciones](#limitaciones)
+- [Instrucciones de Uso](#instrucciones-de-uso)
+- [Licencia](#licencia)
+- [Integrantes del Grupo](#integrantes-del-grupo)
+
 # Predicción de Precios de Airbnb en Madrid
 
 Este repositorio contiene el código y la documentación para un proyecto de modelado predictivo destinado a predecir los precios de las habitaciones de Airbnb en Madrid. Se utilizan técnicas de análisis de datos y aprendizaje automático para desarrollar modelos que puedan 
@@ -143,7 +160,7 @@ Sigue las instrucciones en los notebooks o scripts en la carpeta notebooks para 
 Este proyecto está bajo la licencia MIT. Puedes ver los detalles de la licencia en el archivo [LICENSE](LICENSE).
 
 ## Integrantes del Grupo
-- Andrea Torres Jaramillo: [AndreaTJ](https://github.com/AndreaTJ)
+- Andrea Torres Jaramillo: [AndreaTJ](https://www.linkedin.com/in/andrea-torres-j/)
 - Clara Garriga: [gmclara](https://github.com/gmclara)
 - Elsa Toledo Gómez: [ELSATOLEDO](https://github.com/ELSATOLEDO)
 - Miriam Moreira Rubio: [MiriamM](https://github.com/Mimoru93)
