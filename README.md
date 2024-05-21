@@ -49,7 +49,7 @@ El repositorio contiene el proyecto para analizar y predecir precios de inmueble
 - `data`: Contiene los datasets en formatos raw y processed.
 - `docs`: Documentación adicional.
 - `notebooks`: Notebooks y scripts utilizados para el análisis y modelado.
-- `reports`: Informes generados del proyecto.
+- `reports`: Informes generados del proyecto y presentación. 
 
 ## Resultados del proyecto:
 ### Arquitectura y Validación de Datos
