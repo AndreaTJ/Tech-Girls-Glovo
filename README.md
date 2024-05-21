@@ -60,9 +60,8 @@ y una gestión eficiente de la base de datos. Es una base para construir platafo
 Adiocionalmente se realizó un muestreo inicial y una exploración exhaustiva de los datos para identificar posibles problemas de calidad, como valores nulos y outliers. Además, se llevó a cabo una validación de los datos para garantizar su integridad y coherencia.
 
 ### Análisis Exploratorio
-Durante el análisis exploratorio de los datos, se detectaron y trataron los outliers y valores nulos, asegurando así la calidad de los datos utilizados en el modelado. Se realizaron visualizaciones informativas, como boxplots e histogramas, para comprender mejor la
-distribución de las variables y su relación con el precio de alquiler.
-Entre lo mas relevante se puede observar la relación del precio con los barrio y la variabilidad de los datos: 
+Durante el análisis exploratorio de los datos, se detectaron y trataron los outliers y valores nulos, asegurando así la calidad de los datos utilizados en el modelado. Se realizaron visualizaciones informativas, como boxplots e histogramas, para comprender mejor la distribución de las variables y su relación con el precio de alquiler. Entre lo mas relevante se puede observar la relación del precio con los barrio y la variabilidad de los datos: 
+
 ![Diagrama de precios](https://github.com/AndreaTJ/Tech-Girls-Glovo/blob/main/docs/precios.png)
 
 
