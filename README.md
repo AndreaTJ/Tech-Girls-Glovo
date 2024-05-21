@@ -161,10 +161,10 @@ Este proyecto está bajo la licencia MIT. Puedes ver los detalles de la licencia
 
 ## Integrantes del Grupo
 - Andrea Torres Jaramillo: [AndreaTJ](https://www.linkedin.com/in/andrea-torres-j/)
-- Clara Garriga: [gmclara](https://github.com/gmclara)
-- Elsa Toledo Gómez: [ELSATOLEDO](https://github.com/ELSATOLEDO)
-- Miriam Moreira Rubio: [MiriamM](https://github.com/Mimoru93)
-- Neivys González Gómez: [NeivysG](https://github.com/neiluz)
-- Viviana Pico Paredes: [VivianaPico](https://github.com/VivianaPico)
+- Clara Garriga: [gmclara](https://www.linkedin.com/in/claragarrigam/)
+- Elsa Toledo Gómez: [ELSATOLEDO](https://www.linkedin.com/in/elsa-toledo-aa355b289/)
+- Miriam Moreira Rubio: [MiriamM](https://www.linkedin.com/in/miriam-moreira-rubio/)
+- Neivys González Gómez: [NeivysG](https://www.linkedin.com/in/neivyslgonzalezg/)
+- Viviana Pico Paredes: [VivianaPico](https://www.linkedin.com/in/viviana-pico/)
 
   
