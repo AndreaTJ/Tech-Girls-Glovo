@@ -66,9 +66,9 @@ Durante el análisis exploratorio de los datos, se detectaron y trataron los out
 
 
 ### Visualización de las Métricas
-Se creó un dashboard interactivo en Tableau para mostrar los principales indicadores clave de rendimiento (KPIs) del proyecto. Este dashboard proporciona una visión general de los datos y permite a los usuarios explorar las tendencias y patrones relevantes de manera
-intuitiva.
-**Colocar imagen**
+Se creó una historia interactiva en Tableau para mostrar los principales indicadores clave de rendimiento (KPIs) del proyecto. Esta historia proporciona una visión general de los datos y permite a los usuarios explorar las tendencias y patrones relevantes de manera intuitiva.
+
+![Historia](https://github.com/AndreaTJ/Tech-Girls-Glovo/blob/main/docs/tableau.png)
 
 ### Pre-procesamiento
 El preprocesamiento de datos es una fase crucial en cualquier proyecto de análisis de datos y modelado predictivo. En nuestro proyecto sobre la predicción de precios de Airbnb en Madrid, se realizaron una serie de pasos para garantizar
