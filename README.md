@@ -64,6 +64,7 @@ Durante el análisis exploratorio de los datos, se detectaron y trataron los out
 
 ![Diagrama de precios](https://github.com/AndreaTJ/Tech-Girls-Glovo/blob/main/docs/precios.png)
 
+Para una revisión más detallado del análisis exploratorio más detallado en en R, te invitamos a revisar este cuaderno. Encuentra más información detallada [aqui.](https://andreatj.github.io/Tech-Girls-Glovo/) 
 
 ### Visualización de las Métricas
 Se creó una historia interactiva en Tableau para mostrar los principales indicadores clave de rendimiento (KPIs) del proyecto. Esta historia proporciona una visión general de los datos y permite a los usuarios explorar las tendencias y patrones relevantes de manera intuitiva.
@@ -113,6 +114,8 @@ Después de aplicar el pipeline para realizar predicciones sobre nuevos datos, s
 realista del precio esperado, considerando la incertidumbre inherente al modelo. Resulta especialmente útil para usuarios que buscan tener una idea general del precio esperado y desean comprender la variabilidad en esa estimación. Es fundamental señalar que, aunque 
 se utilizó el modelo XGBoost debido a su mejor desempeño, la elección del modelo no es concluyente debido al ruido presente en el conjunto de datos. Por lo tanto, este ejemplo se presenta como una forma de automatizar el proceso de predicción de precios, pero se 
 recomienda realizar análisis más profundos y considerar otras técnicas de modelado para obtener resultados más sólidos y confiables.
+
+Encuentra detalles adicionales en nuestros análisis y modelo de regresión para la predición de precios [aqui](https://github.com/AndreaTJ/Tech-Girls-Glovo/blob/main/notebooks/MLRegression_model_airbnb.ipynb).
 
 ## Conclusiones
 * Se encontró que los modelos de Random Forest y XGBoost superaron significativamente el rendimiento de la regresión lineal, demostrando ser más efectivos para capturar relaciones complejas en los datos y proporcionar predicciones más precisas del precio de las habitaciones de Airbnb en Madrid.
