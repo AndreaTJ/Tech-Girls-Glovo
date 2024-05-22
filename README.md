@@ -68,6 +68,8 @@ Durante el análisis exploratorio de los datos, se detectaron y trataron los out
 ### Visualización de las Métricas
 Se creó una historia interactiva en Tableau para mostrar los principales indicadores clave de rendimiento (KPIs) del proyecto. Esta historia proporciona una visión general de los datos y permite a los usuarios explorar las tendencias y patrones relevantes de manera intuitiva.
 
+Puedes ver la visualización en Tableau [aquí](https://public.tableau.com/shared/ZN79NYZ79?:display_count=n&:origin=viz_share_link).
+
 ![Historia](https://github.com/AndreaTJ/Tech-Girls-Glovo/blob/main/docs/tableau.png)
 
 ### Pre-procesamiento
