@@ -1,9 +1,9 @@
-# TECH-GIRLS-GLOVO
+# Predicción de Precios de Airbnb en Madrid
 ![madrid](https://github.com/AndreaTJ/Tech-Girls-Glovo/raw/main/docs/banner-madrid.jpg)
 
 # Índice
 
-- [Introducción](#predicción-de-precios-de-airbnb-en-madrid)
+- [Introducción](#introducción)
 - [Estructura del Repositorio](#estructura-del-repositorio)
 - [Resultados del proyecto](#resultados-del-proyecto)
    - [Arquitectura y Validación de Datos](#arquitectura-y-validación-de-datos)
@@ -18,7 +18,7 @@
 - [Licencia](#licencia)
 - [Integrantes del Grupo](#integrantes-del-grupo)
 
-# Predicción de Precios de Airbnb en Madrid
+# Introducción
 
 Este repositorio contiene el código y la documentación para un proyecto de modelado predictivo destinado a predecir los precios de las habitaciones de Airbnb en Madrid. Se utilizan técnicas de análisis de datos y aprendizaje automático para desarrollar modelos que puedan 
 estimar con precisión los precios de alquiler en diferentes áreas de Madrid. Este proyecto utilizño el dataset público de Airbnb disponible en [OpenDataSoft](https://public.opendatasoft.com/explore/dataset/air-bnb-listings/table/?disjunctive.neighbourhood&disjunctive.column_10&disjunctive.city&q=Madrid&location=7,40.5931,-4.422&basemap=jawg.light).
